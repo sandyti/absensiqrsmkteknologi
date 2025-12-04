@@ -51,17 +51,13 @@ class StudentScanController extends Controller
             }
         }
 
-        Attendance::updateOrCreate(
-            [
-                'student_id' => $student->id,
-                'date' => Carbon::today()->toDateString(),
-            ],
-            [
-                'status' => 'hadir',
-                'note' => 'Scan QR: '.$session->subject?->name,
-                'recorded_by' => $session->teacher_id,
-            ]
-        );
+        Attendance::create([
+            'student_id' => $student->id,
+            'date' => Carbon::today()->toDateString(),
+            'status' => 'hadir',
+            'note' => 'Scan QR: '.$session->subject?->name,
+            'recorded_by' => $session->teacher_id,
+        ]);
 
         return back()->with('status', 'Scan berhasil dicatat.');
     }
