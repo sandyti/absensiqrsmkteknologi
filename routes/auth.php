@@ -54,6 +54,7 @@ Route::middleware('auth')->group(function () {
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
 
-    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
+    // Allow logout via POST (default) and GET to avoid 405 when links hit /logout directly.
+    Route::match(['post', 'get'], 'logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
 });
