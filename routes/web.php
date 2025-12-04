@@ -44,6 +44,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/attendance/session/close', [TeacherSessionController::class, 'close'])->name('attendance.session.close');
         Route::post('/attendance/session/manual', [TeacherSessionController::class, 'markManual'])->name('attendance.session.manual');
         Route::post('/attendance/session/refresh', [TeacherSessionController::class, 'refreshCode'])->name('attendance.session.refresh');
+        Route::get('/attendance/session/scans', [TeacherSessionController::class, 'scans'])->name('attendance.session.scans');
     });
 
     Route::middleware('role:siswa')->group(function () {

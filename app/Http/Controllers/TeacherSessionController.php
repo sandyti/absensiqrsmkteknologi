@@ -219,6 +219,45 @@ class TeacherSessionController extends Controller
         ]);
     }
 
+    public function scans(Request $request): JsonResponse
+    {
+        $teacher = $request->user();
+        $classId = $request->query('class_id');
+        $subjectId = $request->query('subject_id');
+
+        $session = AttendanceSession::where('teacher_id', $teacher->id)
+            ->whereIn('status', ['active', 'paused'])
+            ->when($classId, fn ($q) => $q->where('class_id', $classId))
+            ->when($subjectId, fn ($q) => $q->where('subject_id', $subjectId))
+            ->latest()
+            ->first();
+
+        if (! $session) {
+            return response()->json(['data' => []]);
+        }
+
+        $class = $session->class;
+
+        $scans = Attendance::with('student')
+            ->whereDate('date', Carbon::today())
+            ->when($class?->name, function ($query, $className) {
+                $query->whereHas('student', function ($q) use ($className) {
+                    $q->where('classroom', $className);
+                });
+            })
+            ->latest()
+            ->get()
+            ->map(function ($attendance) {
+                return [
+                    'student' => $attendance->student?->name ?? '-',
+                    'status' => $attendance->status,
+                    'time' => optional($attendance->created_at)->format('H:i'),
+                ];
+            });
+
+        return response()->json(['data' => $scans]);
+    }
+
     protected function makeSessionCode(?SchoolClass $class, ?Subject $subject): string
     {
         $classPart = strtoupper($class?->name ?? 'CLASS');

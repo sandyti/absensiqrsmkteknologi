@@ -124,7 +124,7 @@
 
             <div class="border border-gray-200 rounded-md p-3">
                 <h4 class="font-semibold text-gray-800 text-sm mb-2">Siswa Berhasil Scan</h4>
-                <div class="space-y-1 text-sm text-gray-700 max-h-40 overflow-y-auto">
+                <div id="scan-list" class="space-y-1 text-sm text-gray-700 max-h-40 overflow-y-auto">
                     @forelse ($scans as $scan)
                         <div class="flex items-center justify-between border-b border-gray-100 pb-1">
                             <span>{{ $scan->student->name ?? '-' }}</span>
@@ -182,6 +182,7 @@
         <script>
             const initialCode = @json($activeSession->code ?? null);
             const refreshUrl = "{{ route('attendance.session.refresh') }}";
+            const scanUrl = "{{ route('attendance.session.scans', ['class_id' => $selectedClassId, 'subject_id' => $selectedSubjectId]) }}";
             const csrf = "{{ csrf_token() }}";
             let qr;
 
@@ -221,6 +222,54 @@
                 renderQRCode(initialCode);
                 setInterval(refreshCode, 15000);
             }
+            
+            // Periodically fetch latest scan list without refreshing QR or the whole page.
+            const scanIntervalMs = 5000;
+            const scanListEl = document.getElementById('scan-list');
+
+            function renderScans(items) {
+                if (!scanListEl) return;
+                if (!items.length) {
+                    scanListEl.innerHTML = '<p class="text-xs text-gray-500">Belum ada scan.</p>';
+                    return;
+                }
+
+                const rows = items.map(item => {
+                    const status = item.status ?? '-';
+                    const time = item.time ? `<span class="text-[10px] text-gray-400">${item.time}</span>` : '';
+                    return `
+                        <div class="flex items-center justify-between border-b border-gray-100 pb-1">
+                            <div class="flex flex-col">
+                                <span>${item.student ?? '-'}</span>
+                                ${time}
+                            </div>
+                            <span class="text-xs text-gray-500">${status}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                scanListEl.innerHTML = rows;
+            }
+
+            async function refreshScans() {
+                try {
+                    const response = await fetch(scanUrl, { headers: { 'Accept': 'application/json' } });
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    renderScans(data.data || []);
+                } catch (error) {
+                    console.error('Gagal memuat data scan', error);
+                }
+            }
+
+            setInterval(() => {
+                if (!document.hidden) {
+                    refreshScans();
+                }
+            }, scanIntervalMs);
+
+            // initial load
+            refreshScans();
         </script>
     @endpush
 @endif
