@@ -1,0 +1,42 @@
+name: Pull and build on frontend changes
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger remote pull and build
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script_stop: true
+          script: |
+            set -e
+            cd ${{ secrets.PATH_WORK }}
+
+            old_rev=$(git rev-parse HEAD)
+            git pull origin main
+            new_rev=$(git rev-parse HEAD)
+
+            if [ "$old_rev" = "$new_rev" ]; then
+              echo "No new commits to deploy."
+              exit 0
+            fi
+
+            changed=$(git diff --name-only "$old_rev" "$new_rev" || true)
+            if echo "$changed" | grep -Ei '\.blade\.php$|\.js$|\.css$' >/dev/null 2>&1; then
+              echo "Frontend-related changes detected, building assets..."
+              npm ci
+              npm run build
+            else
+              echo "No frontend-related changes detected, skipping npm build."
+            fi
