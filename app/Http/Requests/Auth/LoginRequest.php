@@ -5,6 +5,7 @@ namespace App\Http\Requests\Auth;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -42,42 +43,41 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        $roleInput = $this->string('role')->lower()->value();
-        $roleMap = [
-            'admin' => User::ROLE_ADMIN,
-            'guru' => User::ROLE_GURU,
-            'teacher' => User::ROLE_GURU,
-            'siswa' => User::ROLE_SISWA,
-            'student' => User::ROLE_SISWA,
-        ];
-        $roleRedirectParam = [
-            'teacher' => 'guru',
-            'student' => 'siswa',
-            'admin' => 'admin'
-        ];
-
+        $roleInput = $this->normalizedRole();
         $credentials = $this->only('email', 'password');
+        $remember = $this->boolean('remember');
 
-        if (isset($roleMap[$roleInput])) {
-            $credentials['role'] = $roleMap[$roleInput];
+        $user = User::where('email', $this->string('email'))->first();
+        $allowedRoles = $this->allowedRoles($roleInput);
+
+        if (
+            $user &&
+            (empty($allowedRoles) || in_array($user->role, $allowedRoles, true)) &&
+            Hash::check($this->string('password'), $user->password)
+        ) {
+            Auth::login($user, $remember);
+            RateLimiter::clear($this->throttleKey());
+            return;
         }
 
-        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+        $credentialsWithRole = $this->credentialsWithRole($credentials, $roleInput);
 
-            $exception = ValidationException::withMessages([
-                'email' => trans('auth.failed'),
-            ]);
-
-            if ($roleInput) {
-                $redirectRole = $roleRedirectParam[$roleInput] ?? $roleInput;
-                $exception->redirectTo(route('login', ['role' => $redirectRole], false));
-            }
-
-            throw $exception;
+        if (Auth::attempt($credentialsWithRole, $remember)) {
+            RateLimiter::clear($this->throttleKey());
+            return;
         }
 
-        RateLimiter::clear($this->throttleKey());
+        RateLimiter::hit($this->throttleKey());
+
+        $exception = ValidationException::withMessages([
+            'email' => trans('auth.failed'),
+        ]);
+
+        if ($roleParam = $this->redirectRoleParam($roleInput)) {
+            $exception->redirectTo(route('login.role', ['role' => $roleParam], false));
+        }
+
+        throw $exception;
     }
 
     /**
@@ -109,5 +109,48 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+    }
+
+    private function normalizedRole(): ?string
+    {
+        $input = strtolower((string) ($this->route('role') ?? $this->input('role', '')));
+
+        return match ($input) {
+            'teacher' => User::ROLE_GURU,
+            'guru' => User::ROLE_GURU,
+            'student' => User::ROLE_SISWA,
+            'siswa' => User::ROLE_SISWA,
+            'admin' => User::ROLE_ADMIN,
+            default => null,
+        };
+    }
+
+    private function credentialsWithRole(array $credentials, ?string $role): array
+    {
+        if ($role) {
+            $credentials['role'] = $role;
+        }
+
+        return $credentials;
+    }
+
+    private function allowedRoles(?string $normalizedRole): array
+    {
+        return match ($normalizedRole) {
+            User::ROLE_ADMIN => [User::ROLE_ADMIN],
+            User::ROLE_GURU => [User::ROLE_GURU, 'teacher'],
+            User::ROLE_SISWA => [User::ROLE_SISWA, 'student'],
+            default => [],
+        };
+    }
+
+    private function redirectRoleParam(?string $normalizedRole): ?string
+    {
+        return match ($normalizedRole) {
+            User::ROLE_ADMIN => 'admin',
+            User::ROLE_GURU => 'guru',
+            User::ROLE_SISWA => 'siswa',
+            default => null,
+        };
     }
 }

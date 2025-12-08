@@ -8,15 +8,20 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Models\User;
 
 class AuthenticatedSessionController extends Controller
 {
     /**
      * Display the login view.
      */
-    public function create(): View
+    public function create(Request $request, ?string $role = null): View
     {
-        return view('auth.login');
+        $normalizedRole = $this->normalizeRole($role ?? $request->query('role'));
+
+        return view('auth.login', [
+            'requestedRole' => $normalizedRole,
+        ]);
     }
 
     /**
@@ -37,6 +42,23 @@ class AuthenticatedSessionController extends Controller
         ];
 
         return redirect()->intended($redirects[$user->role] ?? route('dashboard', absolute: false));
+    }
+
+    private function normalizeRole(?string $role): ?string
+    {
+        if (! $role) {
+            return null;
+        }
+
+        $map = [
+            'teacher' => User::ROLE_GURU,
+            'guru' => User::ROLE_GURU,
+            'student' => User::ROLE_SISWA,
+            'siswa' => User::ROLE_SISWA,
+            'admin' => User::ROLE_ADMIN,
+        ];
+
+        return $map[strtolower($role)] ?? null;
     }
 
     /**

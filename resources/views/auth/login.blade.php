@@ -1,5 +1,7 @@
 @php
-    $role = request('role') ?? old('role');
+    $routeRole = request()->route('role');
+    $inputRole = request('role') ?? old('role');
+    $role = $routeRole ?? $inputRole ?? ($requestedRole ?? null);
     $normalizedRole = match ($role) {
         'teacher' => 'guru',
         'student' => 'siswa',

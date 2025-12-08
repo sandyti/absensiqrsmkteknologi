@@ -20,6 +20,10 @@ Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
+    Route::get('login/{role}', [AuthenticatedSessionController::class, 'create'])
+        ->whereIn('role', ['admin', 'guru', 'siswa'])
+        ->name('login.role');
+
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])

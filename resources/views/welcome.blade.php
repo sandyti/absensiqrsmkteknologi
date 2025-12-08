@@ -68,7 +68,7 @@
                             <p class="text-sm text-slate-600 mt-1">Kelola data siswa, guru, kelas, jadwal, dan laporan absensi.</p>
                         </div>
                         <div class="mt-auto">
-                            <a href="{{ route('login', ['role' => 'admin']) }}" class="role-btn admin">
+                            <a href="{{ route('login.role', ['role' => 'admin']) }}" class="role-btn admin">
                                 Login Sebagai Admin
                             </a>
                         </div>
@@ -81,7 +81,7 @@
                         </div>
                         <div class="mt-auto">
                             @if (Route::has('login'))
-                                <a href="{{ route('login', ['role' => 'guru']) }}" class="role-btn teacher">
+                                <a href="{{ route('login.role', ['role' => 'guru']) }}" class="role-btn teacher">
                                     Login Sebagai Guru
                                 </a>
                             @else
@@ -97,7 +97,7 @@
                             <p class="text-sm text-slate-600 mt-1">Lihat riwayat absensi, status hadir/izin, dan keterlambatan.</p>
                         </div>
                         <div class="mt-auto">
-                            <a href="{{ route('login', ['role' => 'siswa']) }}" class="role-btn student">
+                            <a href="{{ route('login.role', ['role' => 'siswa']) }}" class="role-btn student">
                                 Login Sebagai Siswa
                             </a>
                         </div>
