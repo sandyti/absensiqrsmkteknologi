@@ -47,10 +47,10 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Kelas</label>
-                        <select name="class_id" class="mt-1 w-full rounded border-gray-300 text-sm">
+                        <select name="class_id" id="edit-class-select" class="mt-1 w-full rounded border-gray-300 text-sm">
                             <option value="">Pilih kelas</option>
                             @foreach ($classes as $class)
-                                <option value="{{ $class->id }}" @selected(old('class_id', $subject->class_id) == $class->id || $subject->classroom === $class->name)>{{ $class->name }}</option>
+                                <option value="{{ $class->id }}" data-classroom="{{ $class->name }}" @selected(old('class_id', $subject->class_id) == $class->id || $subject->classroom === $class->name)>{{ $class->name }}</option>
                             @endforeach
                         </select>
                         <input name="classroom" value="{{ old('classroom', $subject->classroom) }}" class="mt-2 w-full rounded border-gray-300 text-sm" placeholder="Atau ketik manual">
@@ -66,14 +66,14 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700">Siswa</label>
-                        <select name="students[]" multiple class="mt-1 w-full rounded border-gray-300 text-sm h-40">
+                        <select name="students[]" id="edit-students-select" multiple class="mt-1 w-full rounded border-gray-300 text-sm h-40">
                             @foreach ($students as $student)
-                                <option value="{{ $student->id }}" @selected(in_array($student->id, old('students', $subject->students->pluck('id')->toArray())))>
+                                <option value="{{ $student->id }}" data-classroom="{{ $student->classroom ?? '' }}" @selected(in_array($student->id, old('students', $subject->students->pluck('id')->toArray())))>
                                     {{ $student->name }} ({{ $student->classroom ?? '-' }})
                                 </option>
                             @endforeach
                         </select>
-                        <p class="text-xs text-gray-500 mt-1">Tahan Ctrl/Cmd untuk pilih lebih dari satu.</p>
+                        <p class="text-xs text-gray-500 mt-1">Otomatis memilih siswa sesuai kelas yang dipilih. Tahan Ctrl/Cmd untuk pilih lebih dari satu.</p>
                     </div>
 
                     <div class="md:col-span-2 flex items-center justify-between pt-2">
@@ -167,6 +167,34 @@
             attachListeners(endInput);
 
             updateHiddenValue();
+
+            // Auto select students by class (edit form)
+            const classSelect = document.getElementById('edit-class-select');
+            const studentSelect = document.getElementById('edit-students-select');
+
+            function syncStudentsByClass() {
+                if (!classSelect || !studentSelect) return;
+                const selectedClassroom = classSelect.options[classSelect.selectedIndex]?.dataset.classroom || '';
+                const options = Array.from(studentSelect.options);
+
+                options.forEach(opt => {
+                    const room = (opt.dataset.classroom || '').trim();
+                    if (!selectedClassroom) {
+                        opt.disabled = false;
+                    } else if (room === selectedClassroom) {
+                        opt.disabled = false;
+                        opt.selected = true;
+                    } else {
+                        opt.selected = false;
+                        opt.disabled = true;
+                    }
+                });
+            }
+
+            if (classSelect && studentSelect) {
+                classSelect.addEventListener('change', syncStudentsByClass);
+                syncStudentsByClass();
+            }
         });
     </script>
 @endpush

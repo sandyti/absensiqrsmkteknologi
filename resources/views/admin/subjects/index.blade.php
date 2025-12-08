@@ -86,10 +86,10 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Kelas</label>
-                                        <select name="class_id" class="mt-1 w-full rounded border-gray-300 text-sm">
+                                        <select name="class_id" id="create-class-select" class="mt-1 w-full rounded border-gray-300 text-sm">
                                             <option value="">Pilih kelas</option>
                                             @foreach ($classes as $class)
-                                                <option value="{{ $class->id }}">{{ $class->name }}</option>
+                                                <option value="{{ $class->id }}" data-classroom="{{ $class->name }}">{{ $class->name }}</option>
                                             @endforeach
                                         </select>
                                         <input name="classroom" class="mt-2 w-full rounded border-gray-300 text-sm" placeholder="Atau ketik manual">
@@ -105,12 +105,12 @@
                                     </div>
                                     <div class="md:col-span-2">
                                         <label class="block text-sm font-medium text-gray-700">Siswa</label>
-                                        <select name="students[]" multiple class="mt-1 w-full rounded border-gray-300 text-sm h-32">
+                                        <select name="students[]" id="create-students-select" multiple class="mt-1 w-full rounded border-gray-300 text-sm h-32">
                                             @foreach ($students as $student)
-                                                <option value="{{ $student->id }}">{{ $student->name }} ({{ $student->classroom ?? '-' }})</option>
+                                                <option value="{{ $student->id }}" data-classroom="{{ $student->classroom ?? '' }}">{{ $student->name }} ({{ $student->classroom ?? '-' }})</option>
                                             @endforeach
                                         </select>
-                                        <p class="text-xs text-gray-500 mt-1">Tahan Ctrl/Cmd untuk pilih lebih dari satu.</p>
+                                        <p class="text-xs text-gray-500 mt-1">Otomatis memilih siswa sesuai kelas yang dipilih. Tahan Ctrl/Cmd untuk pilih lebih dari satu.</p>
                                     </div>
                                     <div class="md:col-span-3">
                                         <button class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">Simpan Data</button>
@@ -266,6 +266,34 @@
             attachListeners(endInput);
 
             updateHiddenValue();
+
+            // Auto select students by class (create form)
+            const classSelect = document.getElementById('create-class-select');
+            const studentSelect = document.getElementById('create-students-select');
+
+            function syncStudentsByClass() {
+                if (!classSelect || !studentSelect) return;
+                const selectedClassroom = classSelect.options[classSelect.selectedIndex]?.dataset.classroom || '';
+                const options = Array.from(studentSelect.options);
+
+                options.forEach(opt => {
+                    const room = (opt.dataset.classroom || '').trim();
+                    if (!selectedClassroom || room === selectedClassroom) {
+                        opt.disabled = false;
+                        if (selectedClassroom && room === selectedClassroom) {
+                            opt.selected = true;
+                        }
+                    } else {
+                        opt.selected = false;
+                        opt.disabled = true;
+                    }
+                });
+            }
+
+            if (classSelect && studentSelect) {
+                classSelect.addEventListener('change', syncStudentsByClass);
+                syncStudentsByClass();
+            }
         });
     </script>
 @endpush
