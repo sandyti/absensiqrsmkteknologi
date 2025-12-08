@@ -159,13 +159,19 @@
                                                             </div>
                                                         @endif
                                                     </td>
-                                                    <td class="px-4 py-2 space-x-2">
-                                                        <a href="{{ route('subjects.edit', $subject) }}" class="text-blue-600 hover:text-blue-700">Edit</a>
-                                                        <form method="POST" action="{{ route('subjects.destroy', $subject) }}" class="inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button class="text-red-600 hover:text-red-700" onclick="return confirm('Hapus mapel ini?')">Hapus</button>
-                                                        </form>
+                                                    <td class="px-4 py-2">
+                                                        <div class="flex items-center gap-3">
+                                                            <a href="{{ route('subjects.edit', $subject) }}" class="text-blue-600 hover:text-blue-700" title="Edit">
+                                                                <i class="fa-solid fa-pen-to-square"></i>
+                                                            </a>
+                                                            <form method="POST" action="{{ route('subjects.destroy', $subject) }}" class="inline">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button class="text-red-600 hover:text-red-700" onclick="return confirm('Hapus mapel ini?')" title="Hapus">
+                                                                    <i class="fa-solid fa-trash"></i>
+                                                                </button>
+                                                            </form>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             @empty
@@ -186,6 +192,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/timepicker-ui@3.2.0/dist/css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         .time-slot-picker .timepicker-ui {
             display: block;
