@@ -9,11 +9,26 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Artisan::command('app:reset-guru-passwords', function () {
-    $newPassword = 'password';
+Artisan::command('app:reset-passwords {role} {--password=password}', function (string $role) {
+    $newPassword = $this->option('password') ?: 'password';
     $hashed = Hash::make($newPassword);
 
-    $count = User::where('role', User::ROLE_GURU)->update(['password' => $hashed]);
+    $roleMap = [
+        'admin' => User::ROLE_ADMIN,
+        'guru' => User::ROLE_GURU,
+        'siswa' => User::ROLE_SISWA,
+        'teacher' => User::ROLE_GURU,
+        'student' => User::ROLE_SISWA,
+    ];
 
-    $this->info("Updated {$count} guru passwords to '{$newPassword}'.");
-})->purpose('Force reset all guru passwords to a fixed value');
+    $normalizedRole = $roleMap[strtolower($role)] ?? null;
+
+    if (! $normalizedRole) {
+        $this->error('Role tidak dikenali. Gunakan admin|guru|siswa.');
+        return;
+    }
+
+    $count = User::where('role', $normalizedRole)->update(['password' => $hashed]);
+
+    $this->info("Updated {$count} {$normalizedRole} passwords to '{$newPassword}'.");
+})->purpose('Force reset passwords by role (admin/guru/siswa)');
