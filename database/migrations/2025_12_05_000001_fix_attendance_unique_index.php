@@ -9,14 +9,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Drop FK so unique/index changes are allowed.
-        Schema::table('attendances', function (Blueprint $table) {
-            try {
+        // Drop FK so unique/index changes are allowed (only if exists).
+        if ($this->hasForeignKey('attendances', 'attendances_student_id_foreign')) {
+            Schema::table('attendances', function (Blueprint $table) {
                 $table->dropForeign(['student_id']);
-            } catch (\Throwable $e) {
-                // FK might already be dropped.
-            }
-        });
+            });
+        }
 
         // Ensure supporting indexes exist (skip if already there).
         if (! $this->indexExists('attendances', 'attendances_student_id_idx')) {
@@ -47,13 +45,11 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('attendances', function (Blueprint $table) {
-            try {
+        if ($this->hasForeignKey('attendances', 'attendances_student_id_foreign')) {
+            Schema::table('attendances', function (Blueprint $table) {
                 $table->dropForeign(['student_id']);
-            } catch (\Throwable $e) {
-                // FK might already be dropped.
-            }
-        });
+            });
+        }
 
         Schema::table('attendances', function (Blueprint $table) {
             try {
@@ -83,6 +79,16 @@ return new class extends Migration
     private function indexExists(string $table, string $index): bool
     {
         $result = DB::select("SHOW INDEX FROM {$table} WHERE Key_name = ?", [$index]);
+
+        return ! empty($result);
+    }
+
+    private function hasForeignKey(string $table, string $fkName): bool
+    {
+        $result = DB::select(
+            'SELECT CONSTRAINT_NAME FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = ? AND CONSTRAINT_NAME = ?',
+            [$table, $fkName]
+        );
 
         return ! empty($result);
     }
