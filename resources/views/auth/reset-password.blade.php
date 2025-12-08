@@ -4,6 +4,9 @@
 
         <!-- Password Reset Token -->
         <input type="hidden" name="token" value="{{ $request->route('token') }}">
+        @if ($request->has('role'))
+            <input type="hidden" name="role" value="{{ $request->role }}">
+        @endif
 
         <!-- Email Address -->
         <div>
