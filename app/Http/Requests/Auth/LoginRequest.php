@@ -50,6 +50,11 @@ class LoginRequest extends FormRequest
             'siswa' => User::ROLE_SISWA,
             'student' => User::ROLE_SISWA,
         ];
+        $roleRedirectParam = [
+            'teacher' => 'guru',
+            'student' => 'siswa',
+            'admin' => 'admin'
+        ];
 
         $credentials = $this->only('email', 'password');
 
@@ -60,9 +65,16 @@ class LoginRequest extends FormRequest
         if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
-            throw ValidationException::withMessages([
+            $exception = ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);
+
+            if ($roleInput) {
+                $redirectRole = $roleRedirectParam[$roleInput] ?? $roleInput;
+                $exception->redirectTo(route('login', ['role' => $redirectRole], false));
+            }
+
+            throw $exception;
         }
 
         RateLimiter::clear($this->throttleKey());
