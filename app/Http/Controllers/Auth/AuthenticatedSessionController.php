@@ -19,6 +19,10 @@ class AuthenticatedSessionController extends Controller
     {
         $normalizedRole = $this->normalizeRole($role ?? $request->query('role'));
 
+        if ($normalizedRole) {
+            $request->session()->put('login_role', $normalizedRole);
+        }
+
         return view('auth.login', [
             'requestedRole' => $normalizedRole,
         ]);
