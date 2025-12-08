@@ -72,23 +72,27 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Kelas Yang Diajar</label>
-                                        <select name="class_id" class="mt-1 w-full rounded border-gray-300 text-sm">
-                                            <option value="">Pilih kelas</option>
+                                        <div class="mt-1 grid grid-cols-2 gap-2 text-sm max-h-32 overflow-y-auto border rounded p-2">
                                             @foreach ($classes as $class)
-                                                <option value="{{ $class->id }}">{{ $class->name }}</option>
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" name="class_ids[]" value="{{ $class->id }}" class="rounded border-gray-300">
+                                                    <span>{{ $class->name }}</span>
+                                                </label>
                                             @endforeach
-                                        </select>
-                                        <input name="teaches_class" class="mt-2 w-full rounded border-gray-300 text-sm" placeholder="Atau ketik manual">
+                                        </div>
+                                        <input name="teaches_class" class="mt-2 w-full rounded border-gray-300 text-sm" placeholder="Atau ketik manual (pisahkan dengan koma)">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Mata Pelajaran</label>
-                                        <select name="subject_id" class="mt-1 w-full rounded border-gray-300 text-sm">
-                                            <option value="">Pilih mapel</option>
+                                        <div class="mt-1 grid grid-cols-2 gap-2 text-sm max-h-32 overflow-y-auto border rounded p-2">
                                             @foreach ($subjects as $subject)
-                                                <option value="{{ $subject->id }}">{{ $subject->name }}</option>
+                                                <label class="flex items-center gap-2">
+                                                    <input type="checkbox" name="subject_ids[]" value="{{ $subject->id }}" class="rounded border-gray-300">
+                                                    <span>{{ $subject->name }}</span>
+                                                </label>
                                             @endforeach
-                                        </select>
-                                        <input name="subject" class="mt-2 w-full rounded border-gray-300 text-sm" placeholder="Atau ketik manual">
+                                        </div>
+                                        <input name="subject" class="mt-2 w-full rounded border-gray-300 text-sm" placeholder="Atau ketik manual (pisahkan dengan koma)">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Jam Pelajaran</label>

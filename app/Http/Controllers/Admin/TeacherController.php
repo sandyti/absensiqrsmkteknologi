@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
+use Illuminate\Support\Collection;
 
 class TeacherController extends Controller
 {
@@ -31,29 +32,24 @@ class TeacherController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'identifier' => ['nullable', 'string', 'max:50'],
-            'teaches_class' => ['nullable', 'string', 'max:100'],
-            'class_id' => ['nullable', 'exists:school_classes,id'],
-            'subject' => ['nullable', 'string', 'max:100'],
-            'subject_id' => ['nullable', 'exists:subjects,id'],
+            'class_ids' => ['array'],
+            'class_ids.*' => ['exists:school_classes,id'],
+            'teaches_class' => ['nullable', 'string', 'max:200'],
+            'subject_ids' => ['array'],
+            'subject_ids.*' => ['exists:subjects,id'],
+            'subject' => ['nullable', 'string', 'max:200'],
             'teaching_hours' => ['nullable', 'string', 'max:100'],
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 
-        $className = $data['teaches_class'] ?? null;
-        if (! empty($data['class_id'])) {
-            $className = SchoolClass::find($data['class_id'])?->name;
-        }
-
-        $subjectName = $data['subject'] ?? null;
-        if (! empty($data['subject_id'])) {
-            $subjectName = Subject::find($data['subject_id'])?->name;
-            $data['teaching_hours'] = Subject::find($data['subject_id'])?->time_slot;
-        }
+        $classNames = $this->resolveClassNames($request);
+        $subjectNames = $this->resolveSubjectNames($request, $data);
+        $data['teaching_hours'] = $subjectNames['time_slot'] ?? $data['teaching_hours'];
 
         User::create([
             ...$data,
-            'teaches_class' => $className,
-            'subject' => $subjectName,
+            'teaches_class' => $classNames,
+            'subject' => $subjectNames['names'],
             'password' => Hash::make($data['password'] ?? 'password'),
             'role' => User::ROLE_GURU,
         ]);
@@ -79,24 +75,20 @@ class TeacherController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$teacher->id],
             'identifier' => ['nullable', 'string', 'max:50'],
-            'teaches_class' => ['nullable', 'string', 'max:100'],
-            'class_id' => ['nullable', 'exists:school_classes,id'],
-            'subject' => ['nullable', 'string', 'max:100'],
-            'subject_id' => ['nullable', 'exists:subjects,id'],
+            'class_ids' => ['array'],
+            'class_ids.*' => ['exists:school_classes,id'],
+            'teaches_class' => ['nullable', 'string', 'max:200'],
+            'subject_ids' => ['array'],
+            'subject_ids.*' => ['exists:subjects,id'],
+            'subject' => ['nullable', 'string', 'max:200'],
             'teaching_hours' => ['nullable', 'string', 'max:100'],
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 
-        $data['teaches_class'] = $data['teaches_class'] ?? null;
-        if (! empty($data['class_id'])) {
-            $data['teaches_class'] = SchoolClass::find($data['class_id'])?->name;
-        }
-
-        $data['subject'] = $data['subject'] ?? null;
-        if (! empty($data['subject_id'])) {
-            $data['subject'] = Subject::find($data['subject_id'])?->name;
-            $data['teaching_hours'] = Subject::find($data['subject_id'])?->time_slot;
-        }
+        $data['teaches_class'] = $this->resolveClassNames($request);
+        $subjectNames = $this->resolveSubjectNames($request, $data);
+        $data['subject'] = $subjectNames['names'];
+        $data['teaching_hours'] = $subjectNames['time_slot'] ?? $data['teaching_hours'];
 
         if (! empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
@@ -116,5 +108,43 @@ class TeacherController extends Controller
         $teacher->delete();
 
         return back()->with('status', 'Guru dihapus.');
+    }
+
+    private function resolveClassNames(Request $request): ?string
+    {
+        $selected = collect($request->input('class_ids', []))
+            ->filter()
+            ->map(fn ($id) => SchoolClass::find($id)?->name)
+            ->filter();
+
+        $manual = collect(explode(',', (string) $request->input('teaches_class')))
+            ->map(fn ($name) => trim($name))
+            ->filter();
+
+        $names = $selected->merge($manual)->filter()->unique()->values();
+
+        return $names->isNotEmpty() ? $names->implode(', ') : null;
+    }
+
+    private function resolveSubjectNames(Request $request, array $data): array
+    {
+        $selected = collect($request->input('subject_ids', []))
+            ->filter()
+            ->map(fn ($id) => Subject::find($id))
+            ->filter();
+
+        $selectedNames = $selected->pluck('name')->filter();
+        $manual = collect(explode(',', (string) $request->input('subject')))
+            ->map(fn ($name) => trim($name))
+            ->filter();
+
+        $names = $selectedNames->merge($manual)->filter()->unique()->values();
+
+        $timeSlot = $selected->first()?->time_slot;
+
+        return [
+            'names' => $names->isNotEmpty() ? $names->implode(', ') : null,
+            'time_slot' => $timeSlot,
+        ];
     }
 }
