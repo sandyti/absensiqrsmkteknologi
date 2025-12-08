@@ -73,8 +73,11 @@ class LoginRequest extends FormRequest
             'email' => trans('auth.failed'),
         ]);
 
+        // Redirect back to role-specific login if provided, else home.
         if ($roleParam = $this->redirectRoleParam($roleInput)) {
             $exception->redirectTo(route('login.role', ['role' => $roleParam], false));
+        } else {
+            $exception->redirectTo(url('/'));
         }
 
         throw $exception;

@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -17,27 +18,22 @@ return new class extends Migration
             }
         });
 
-        Schema::table('attendances', function (Blueprint $table) {
-            // Ensure supporting indexes exist.
-            try {
-                $table->index('student_id', 'attendances_student_id_idx');
-            } catch (\Throwable $e) {
-                // Index already exists.
-            }
+        // Ensure supporting indexes exist (skip if already there).
+        if (! $this->indexExists('attendances', 'attendances_student_id_idx')) {
+            DB::statement('CREATE INDEX attendances_student_id_idx ON attendances(student_id)');
+        }
+        if (! $this->indexExists('attendances', 'attendances_student_id_date_idx')) {
+            DB::statement('CREATE INDEX attendances_student_id_date_idx ON attendances(student_id, date)');
+        }
 
-            try {
-                $table->index(['student_id', 'date'], 'attendances_student_id_date_idx');
-            } catch (\Throwable $e) {
-                // Index already exists.
-            }
-
-            // Drop unique that blocks multiple attendance per day.
-            try {
+        // Drop unique that blocks multiple attendance per day.
+        try {
+            Schema::table('attendances', function (Blueprint $table) {
                 $table->dropUnique('attendances_student_id_date_unique');
-            } catch (\Throwable $e) {
-                // Unique already removed.
-            }
-        });
+            });
+        } catch (\Throwable $e) {
+            // Unique already removed.
+        }
 
         // Re-attach FK for student_id.
         Schema::table('attendances', function (Blueprint $table) {
@@ -61,23 +57,19 @@ return new class extends Migration
 
         Schema::table('attendances', function (Blueprint $table) {
             try {
-                $table->dropIndex('attendances_student_id_date_idx');
-            } catch (\Throwable $e) {
-                // Index might not exist.
-            }
-
-            try {
-                $table->dropIndex('attendances_student_id_idx');
-            } catch (\Throwable $e) {
-                // Index might not exist.
-            }
-
-            try {
                 $table->unique(['student_id', 'date'], 'attendances_student_id_date_unique');
             } catch (\Throwable $e) {
                 // Unique might already exist.
             }
         });
+
+        // Drop indexes only if they exist.
+        if ($this->indexExists('attendances', 'attendances_student_id_date_idx')) {
+            DB::statement('DROP INDEX attendances_student_id_date_idx ON attendances');
+        }
+        if ($this->indexExists('attendances', 'attendances_student_id_idx')) {
+            DB::statement('DROP INDEX attendances_student_id_idx ON attendances');
+        }
 
         Schema::table('attendances', function (Blueprint $table) {
             try {
@@ -86,5 +78,12 @@ return new class extends Migration
                 // FK already exists or failed to add; ignore.
             }
         });
+    }
+
+    private function indexExists(string $table, string $index): bool
+    {
+        $result = DB::select("SHOW INDEX FROM {$table} WHERE Key_name = ?", [$index]);
+
+        return ! empty($result);
     }
 };
