@@ -1,17 +1,22 @@
 @php
     $role = request('role') ?? old('role');
+    $normalizedRole = match ($role) {
+        'teacher' => 'guru',
+        'student' => 'siswa',
+        default => $role,
+    };
     $roleLabel = match ($role) {
         'admin' => 'Login Sebagai Admin',
-        'teacher' => 'Login Sebagai Guru',
-        'student' => 'Login Sebagai Siswa',
+        'teacher', 'guru' => 'Login Sebagai Guru',
+        'student', 'siswa' => 'Login Sebagai Siswa',
         default => __('Log in'),
     };
 @endphp
 @php
     $roleClass = match ($role) {
         'admin' => 'bg-slate-900 hover:bg-slate-800 text-white',
-        'teacher' => 'bg-blue-600 hover:bg-blue-700 text-white',
-        'student' => 'bg-emerald-500 hover:bg-emerald-600 text-white',
+        'teacher', 'guru' => 'bg-blue-600 hover:bg-blue-700 text-white',
+        'student', 'siswa' => 'bg-emerald-500 hover:bg-emerald-600 text-white',
         default => '',
     };
 @endphp
@@ -23,8 +28,8 @@
     <form method="POST" action="{{ route('login') }}">
         @csrf
 
-        @if ($role)
-            <input type="hidden" name="role" value="{{ $role }}">
+        @if ($normalizedRole)
+            <input type="hidden" name="role" value="{{ $normalizedRole }}">
         @endif
 
         <!-- Email Address -->

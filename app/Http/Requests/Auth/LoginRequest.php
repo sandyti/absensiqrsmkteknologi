@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Models\User;
 
 class LoginRequest extends FormRequest
 {
@@ -41,7 +42,22 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $roleInput = $this->string('role')->lower()->value();
+        $roleMap = [
+            'admin' => User::ROLE_ADMIN,
+            'guru' => User::ROLE_GURU,
+            'teacher' => User::ROLE_GURU,
+            'siswa' => User::ROLE_SISWA,
+            'student' => User::ROLE_SISWA,
+        ];
+
+        $credentials = $this->only('email', 'password');
+
+        if (isset($roleMap[$roleInput])) {
+            $credentials['role'] = $roleMap[$roleInput];
+        }
+
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
