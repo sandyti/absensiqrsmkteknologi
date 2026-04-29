@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attendance;
-use App\Models\User;
+use App\Models\Presensi;
+use App\Models\SesiPresensi;
+use App\Models\Siswa;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,32 +15,39 @@ class AttendanceController extends Controller
     public function manage(): View
     {
         $today = Carbon::today();
-        $students = User::where('role', User::ROLE_SISWA)->orderBy('username')->get();
-        $todayAttendance = Attendance::whereDate('date', $today)->get()->keyBy('student_id');
+        $students = Siswa::with('kelas')->orderBy('nama')->get();
+        $activeSession = SesiPresensi::whereDate('tanggal', $today)->latest('id_sesi')->first();
+        $todayPresensi = $activeSession
+            ? Presensi::with('siswa')
+                ->where('id_sesi', $activeSession->id_sesi)
+                ->get()
+                ->keyBy('id_siswa')
+            : collect();
 
-        return view('attendance.manage', compact('students', 'today', 'todayAttendance'));
+        return view('attendance.manage', compact('students', 'today', 'todayPresensi', 'activeSession'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'date' => ['required', 'date'],
+            'id_sesi' => ['required', 'exists:sesi_presensis,id_sesi'],
             'statuses' => ['required', 'array'],
             'statuses.*' => ['required', 'in:hadir,izin,sakit,alpa,terlambat'],
-            'notes' => ['array'],
-            'notes.*' => ['nullable', 'string'],
         ]);
 
-        foreach ($data['statuses'] as $studentId => $status) {
-            Attendance::updateOrCreate(
+        $editorId = $request->user()->guruProfile?->id_guru;
+
+        foreach ($data['statuses'] as $siswaId => $status) {
+            Presensi::updateOrCreate(
                 [
-                    'student_id' => $studentId,
-                    'date' => $data['date'],
+                    'id_sesi' => $data['id_sesi'],
+                    'id_siswa' => $siswaId,
                 ],
                 [
                     'status' => $status,
-                    'note' => $data['notes'][$studentId] ?? null,
-                    'recorded_by' => $request->user()->id,
+                    'edited_by' => $editorId,
+                    'scanned_at' => now(),
+                    'method' => 'manual',
                 ]
             );
         }
@@ -74,9 +82,10 @@ class AttendanceController extends Controller
         }
 
         $records = auth()->user()
-            ->attendances()
-            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
-            ->latest('date')
+            ->presensis()
+            ->with(['sesiPresensi.jadwal.kelas', 'sesiPresensi.jadwal.mapel', 'editor', 'siswa.kelas'])
+            ->whereBetween('scanned_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->latest('scanned_at')
             ->paginate(15)
             ->withQueryString();
 

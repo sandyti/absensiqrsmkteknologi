@@ -68,7 +68,7 @@
                 </form>
             </div>
 
-            @if ($selectedJadwal)
+            @if ($selectedJadwal && $activeSession)
                 <div class="border border-gray-200 rounded-md p-3 space-y-2">
                     <h4 class="font-semibold text-gray-800 text-sm">Input Manual (terlambat/izin/sakit)</h4>
                     <form method="POST" action="{{ route('attendance.session.manual') }}" class="space-y-2">
@@ -76,23 +76,20 @@
                         <input type="hidden" name="jadwal_id" value="{{ $selectedJadwalId }}">
                         <div>
                             <label class="block text-sm text-gray-700">Pilih Siswa</label>
-                            <select name="student_id" id="student-select" class="mt-1 w-full rounded border-gray-300 text-sm" required>
+                            <select name="id_siswa" id="student-select" class="mt-1 w-full rounded border-gray-300 text-sm" required>
                                 <option value="">Pilih siswa</option>
                                 @foreach ($students as $student)
-                                    <option value="{{ $student->id }}">{{ $student->name }} - {{ $student->siswaProfile?->kelas?->nama ?? '-' }}</option>
+                                    <option value="{{ $student->id_siswa }}">{{ $student->nama }} - {{ $student->kelas?->nama ?? '-' }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <select name="status" class="rounded border-gray-300 text-sm" required>
-                                <option value="terlambat">Terlambat</option>
-                                <option value="izin">Izin</option>
-                                <option value="sakit">Sakit</option>
-                                <option value="hadir">Hadir</option>
-                                <option value="alpa">Alpa</option>
-                            </select>
-                            <input name="note" class="rounded border-gray-300 text-sm" placeholder="Catatan (opsional)">
-                        </div>
+                        <select name="status" class="w-full rounded border-gray-300 text-sm" required>
+                            <option value="hadir">Hadir</option>
+                            <option value="izin">Izin</option>
+                            <option value="terlambat">Terlambat</option>
+                            <option value="sakit">Sakit</option>
+                            <option value="alpa">Alpa</option>
+                        </select>
                         <button class="w-full border border-gray-400 rounded-md py-2 text-center font-semibold text-gray-800 hover:bg-gray-50">
                             Simpan Manual
                         </button>
@@ -105,7 +102,7 @@
                 <div id="scan-list" class="space-y-1 text-sm text-gray-700 max-h-40 overflow-y-auto">
                     @forelse ($scans as $scan)
                         <div class="flex items-center justify-between border-b border-gray-100 pb-1">
-                            <span>{{ $scan->student->name ?? '-' }}</span>
+                            <span>{{ $scan->siswa?->nama ?? $scan->student ?? '-' }}</span>
                             <span class="text-xs text-gray-500">{{ $scan->status }}</span>
                         </div>
                     @empty

@@ -1,10 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
-        <div>
-            <p class="text-sm text-gray-500">Halo, {{ auth()->user()->name }}</p>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Rekap Absensi
-            </h2>
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">Halo, {{ auth()->user()->name }}</p>
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                    Rekap Presensi
+                </h2>
+            </div>
         </div>
     </x-slot>
 
@@ -17,7 +19,7 @@
                         <select name="student_id" class="mt-1 w-full rounded border-gray-300 text-sm">
                             <option value="">Semua</option>
                             @foreach ($students as $student)
-                                <option value="{{ $student->id }}" @selected($filters['student_id'] == $student->id)>{{ $student->name }}</option>
+                                <option value="{{ $student->id_siswa }}" @selected($filters['student_id'] == $student->id_siswa)>{{ $student->nama }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -68,28 +70,28 @@
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-2 text-left font-semibold text-gray-700">Tanggal</th>
+                                    <th class="px-4 py-2 text-left font-semibold text-gray-700">Waktu</th>
                                     <th class="px-4 py-2 text-left font-semibold text-gray-700">Siswa</th>
                                     <th class="px-4 py-2 text-left font-semibold text-gray-700">Status</th>
-                                    <th class="px-4 py-2 text-left font-semibold text-gray-700">Dicatat Oleh</th>
-                                    <th class="px-4 py-2 text-left font-semibold text-gray-700">Catatan</th>
+                                    <th class="px-4 py-2 text-left font-semibold text-gray-700">Metode</th>
+                                    <th class="px-4 py-2 text-left font-semibold text-gray-700">Diubah Oleh</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
                                 @forelse ($records as $record)
                                     <tr>
-                                        <td class="px-4 py-2">{{ $record->date->translatedFormat('d F Y') }}</td>
+                                        <td class="px-4 py-2">{{ $record->scanned_at?->translatedFormat('d F Y H:i') ?? '-' }}</td>
                                         <td class="px-4 py-2">
-                                            <div class="font-semibold text-gray-800">{{ $record->student->name ?? '-' }}</div>
-                                            <div class="text-xs text-gray-500">{{ $record->student->siswaProfile?->kelas?->nama ?? '-' }}</div>
+                                            <div class="font-semibold text-gray-800">{{ $record->siswa?->nama ?? '-' }}</div>
+                                            <div class="text-xs text-gray-500">{{ $record->siswa?->kelas?->nama ?? '-' }}</div>
                                         </td>
                                         <td class="px-4 py-2 capitalize font-semibold">{{ $record->status }}</td>
-                                        <td class="px-4 py-2 text-gray-700">{{ $record->recorder->name ?? '-' }}</td>
-                                        <td class="px-4 py-2 text-gray-700">{{ $record->note ?? '-' }}</td>
+                                        <td class="px-4 py-2 capitalize text-gray-700">{{ $record->method }}</td>
+                                        <td class="px-4 py-2 text-gray-700">{{ $record->editor?->nama ?? '-' }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="px-4 py-4 text-center text-gray-500">Belum ada data absensi.</td>
+                                        <td colspan="5" class="px-4 py-4 text-center text-gray-500">Belum ada data presensi.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

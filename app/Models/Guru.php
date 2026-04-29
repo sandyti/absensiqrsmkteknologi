@@ -27,4 +27,9 @@ class Guru extends Model
     {
         return $this->hasMany(Jadwal::class, 'id_guru', 'id_guru');
     }
+
+    public function editedPresensis()
+    {
+        return $this->hasMany(Presensi::class, 'edited_by', 'id_guru');
+    }
 }

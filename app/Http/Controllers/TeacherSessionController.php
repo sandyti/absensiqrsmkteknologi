@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attendance;
 use App\Models\Jadwal;
+use App\Models\Presensi;
 use App\Models\SesiPresensi;
-use App\Models\User;
+use App\Models\Siswa;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
@@ -36,28 +36,21 @@ class TeacherSessionController extends Controller
                 ->first()
             : null;
 
-        $students = collect();
-        if ($selectedJadwal?->kelas) {
-            $students = User::where('role', User::ROLE_SISWA)
-                ->whereHas('siswaProfile', function ($query) use ($selectedJadwal) {
-                    $query->where('id_kelas', $selectedJadwal->id_kelas);
-                })
-                ->orderBy('username')
-                ->get();
-        }
+        $students = $selectedJadwal
+            ? Siswa::with('kelas')
+                ->where('id_kelas', $selectedJadwal->id_kelas)
+                ->orderBy('nama')
+                ->get()
+            : collect();
 
         $showQr = $request->boolean('show_qr');
 
-        $scans = collect();
-        if ($activeSession && $selectedJadwal?->kelas) {
-            $scans = Attendance::with('student')
-                ->whereDate('date', Carbon::today())
-                ->whereHas('student.siswaProfile', function ($query) use ($selectedJadwal) {
-                    $query->where('id_kelas', $selectedJadwal->id_kelas);
-                })
-                ->latest()
-                ->get();
-        }
+        $scans = $activeSession
+            ? Presensi::with('siswa')
+                ->where('id_sesi', $activeSession->id_sesi)
+                ->latest('scanned_at')
+                ->get()
+            : collect();
 
         return view('attendance.session', compact(
             'jadwals',
@@ -78,7 +71,7 @@ class TeacherSessionController extends Controller
 
         $jadwal = $this->accessibleJadwal($request, (int) $data['jadwal_id']);
 
-        $session = SesiPresensi::updateOrCreate(
+        SesiPresensi::updateOrCreate(
             [
                 'id_jadwal' => $jadwal->getKey(),
                 'tanggal' => Carbon::today()->toDateString(),
@@ -120,33 +113,43 @@ class TeacherSessionController extends Controller
     {
         $data = $request->validate([
             'jadwal_id' => ['required', 'exists:jadwals,id_jadwal'],
-            'student_id' => ['required', 'exists:users,id'],
+            'id_siswa' => ['required', 'exists:siswas,id_siswa'],
             'status' => ['required', 'in:hadir,izin,sakit,alpa,terlambat'],
-            'note' => ['nullable', 'string'],
         ]);
 
         $jadwal = $this->accessibleJadwal($request, (int) $data['jadwal_id']);
-        $student = User::where('role', User::ROLE_SISWA)->findOrFail($data['student_id']);
+        $siswa = Siswa::findOrFail($data['id_siswa']);
 
-        if ((int) $student->siswaProfile?->id_kelas !== (int) $jadwal->id_kelas) {
-            return back()->withErrors(['student_id' => 'Siswa tidak sesuai dengan jadwal kelas.']);
+        if ((int) $siswa->id_kelas !== (int) $jadwal->id_kelas) {
+            return back()->withErrors(['id_siswa' => 'Siswa tidak sesuai dengan jadwal kelas.']);
         }
 
-        Attendance::updateOrCreate(
+        $session = SesiPresensi::where('id_jadwal', $jadwal->getKey())
+            ->where('status', 'open')
+            ->whereDate('tanggal', Carbon::today())
+            ->latest('id_sesi')
+            ->first();
+
+        if (! $session) {
+            return back()->withErrors(['jadwal_id' => 'Sesi presensi belum dibuka.']);
+        }
+
+        Presensi::updateOrCreate(
             [
-                'student_id' => $student->id,
-                'date' => Carbon::today()->toDateString(),
+                'id_sesi' => $session->id_sesi,
+                'id_siswa' => $siswa->id_siswa,
             ],
             [
                 'status' => $data['status'],
-                'note' => $data['note'] ?? null,
-                'recorded_by' => $request->user()->id,
+                'edited_by' => $request->user()->guruProfile?->id_guru,
+                'scanned_at' => now(),
+                'method' => 'manual',
             ]
         );
 
         return redirect()->route('attendance.session', [
             'jadwal_id' => $jadwal->getKey(),
-        ])->with('status', 'Absensi manual diperbarui.');
+        ])->with('status', 'Presensi manual diperbarui.');
     }
 
     public function refreshToken(Request $request): JsonResponse
@@ -194,18 +197,15 @@ class TeacherSessionController extends Controller
             return response()->json(['data' => []]);
         }
 
-        $scans = Attendance::with('student')
-            ->whereDate('date', Carbon::today())
-            ->whereHas('student.siswaProfile', function ($query) use ($jadwal) {
-                $query->where('id_kelas', $jadwal->id_kelas);
-            })
-            ->latest()
+        $scans = Presensi::with('siswa')
+            ->where('id_sesi', $session->id_sesi)
+            ->latest('scanned_at')
             ->get()
-            ->map(function ($attendance) {
+            ->map(function ($presensi) {
                 return [
-                    'student' => $attendance->student?->name ?? '-',
-                    'status' => $attendance->status,
-                    'time' => optional($attendance->created_at)->format('H:i'),
+                    'student' => $presensi->siswa?->nama ?? '-',
+                    'status' => $presensi->status,
+                    'time' => optional($presensi->scanned_at)->format('H:i'),
                 ];
             });
 

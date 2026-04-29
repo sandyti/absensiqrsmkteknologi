@@ -64,17 +64,9 @@ class User extends Authenticatable
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function attendances()
+    public function presensis()
     {
-        return $this->hasMany(Attendance::class, 'student_id');
-    }
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function recordedAttendances()
-    {
-        return $this->hasMany(Attendance::class, 'recorded_by');
+        return $this->hasMany(Presensi::class, 'id_siswa', 'id_ref');
     }
 
     public function getNameAttribute(): string
@@ -107,6 +99,11 @@ class User extends Authenticatable
     public function siswaProfile()
     {
         return $this->belongsTo(Siswa::class, 'id_ref', 'id_siswa');
+    }
+
+    public function editedPresensis()
+    {
+        return $this->hasMany(Presensi::class, 'edited_by', 'id_ref');
     }
 
     public function getEmailForPasswordReset(): string

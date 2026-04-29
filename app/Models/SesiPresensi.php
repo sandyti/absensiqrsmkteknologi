@@ -30,4 +30,9 @@ class SesiPresensi extends Model
     {
         return $this->belongsTo(Jadwal::class, 'id_jadwal', 'id_jadwal');
     }
+
+    public function presensis()
+    {
+        return $this->hasMany(Presensi::class, 'id_sesi', 'id_sesi');
+    }
 }

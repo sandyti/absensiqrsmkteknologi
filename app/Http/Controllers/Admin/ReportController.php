@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Attendance;
 use App\Models\Kelas;
-use App\Models\User;
+use App\Models\Presensi;
+use App\Models\Siswa;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -46,26 +46,26 @@ class ReportController extends Controller
 
         return response($dompdf->output(), 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="rekap-absensi.pdf"',
+            'Content-Disposition' => 'inline; filename="rekap-presensi.pdf"',
         ]);
     }
 
     /**
      * @return array{
-     *     students: Collection<int, User>,
+     *     students: Collection<int, Siswa>,
      *     classes: Collection<int, Kelas>,
-     *     records: LengthAwarePaginator|Collection<int, Attendance>,
+     *     records: LengthAwarePaginator|Collection<int, Presensi>,
      *     filters: array,
      *     titleRange: string
      * }
      */
     private function prepareReportData(Request $request, bool $paginate = true): array
     {
-        $students = User::where('role', User::ROLE_SISWA)->orderBy('username')->get();
+        $students = Siswa::with('kelas')->orderBy('nama')->get();
         $classes = Kelas::orderBy('nama')->get();
 
         $filters = $request->validate([
-            'student_id' => ['nullable', 'exists:users,id'],
+            'student_id' => ['nullable', 'exists:siswas,id_siswa'],
             'class_id' => ['nullable', 'exists:school_classes,id_kelas'],
             'range' => ['nullable', 'in:hari,minggu,bulan,tahun'],
             'date' => ['nullable', 'date'],
@@ -74,34 +74,32 @@ class ReportController extends Controller
         $range = $filters['range'] ?? 'hari';
         $date = isset($filters['date']) ? Carbon::parse($filters['date']) : Carbon::today();
 
-        $query = Attendance::with(['student', 'recorder'])
+        $query = Presensi::with(['siswa.kelas', 'sesiPresensi.jadwal', 'editor'])
             ->when($filters['class_id'] ?? null, function ($q, $classId) {
-                $q->whereHas('student', function ($sq) use ($classId) {
-                    $sq->whereHas('siswaProfile.kelas', function ($profile) use ($classId) {
-                        $profile->where('id_kelas', $classId);
-                    });
+                $q->whereHas('siswa', function ($sq) use ($classId) {
+                    $sq->where('id_kelas', $classId);
                 });
             })
-            ->when($filters['student_id'] ?? null, fn ($q, $studentId) => $q->where('student_id', $studentId));
+            ->when($filters['student_id'] ?? null, fn ($q, $studentId) => $q->where('id_siswa', $studentId));
 
         $titleRange = '';
         if ($range === 'hari') {
-            $query->whereDate('date', $date);
+            $query->whereDate('scanned_at', $date);
             $titleRange = $date->translatedFormat('d F Y');
         } elseif ($range === 'minggu') {
-            $query->whereBetween('date', [$date->copy()->startOfWeek(), $date->copy()->endOfWeek()]);
+            $query->whereBetween('scanned_at', [$date->copy()->startOfWeek()->startOfDay(), $date->copy()->endOfWeek()->endOfDay()]);
             $titleRange = 'Minggu ' . $date->weekOfYear;
         } elseif ($range === 'bulan') {
-            $query->whereYear('date', $date->year)->whereMonth('date', $date->month);
+            $query->whereYear('scanned_at', $date->year)->whereMonth('scanned_at', $date->month);
             $titleRange = $date->translatedFormat('F Y');
         } else {
-            $query->whereYear('date', $date->year);
+            $query->whereYear('scanned_at', $date->year);
             $titleRange = 'Tahun ' . $date->year;
         }
 
         $records = $paginate
-            ? $query->orderByDesc('date')->paginate(20)->withQueryString()
-            : $query->orderByDesc('date')->get();
+            ? $query->orderByDesc('scanned_at')->paginate(20)->withQueryString()
+            : $query->orderByDesc('scanned_at')->get();
 
         return [
             'students' => $students,

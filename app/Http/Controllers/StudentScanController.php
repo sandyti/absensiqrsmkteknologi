@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attendance;
+use App\Models\Presensi;
 use App\Models\SesiPresensi;
+use App\Models\Siswa;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class StudentScanController extends Controller
             'token' => ['required', 'string'],
         ]);
 
-        $session = SesiPresensi::with(['jadwal.kelas', 'jadwal.mapel', 'jadwal.guru.user'])
+        $session = SesiPresensi::with(['jadwal.kelas', 'jadwal.mapel', 'jadwal.guru'])
             ->where('status', 'open')
             ->whereDate('tanggal', Carbon::today())
             ->where('token', $data['token'])
@@ -26,23 +27,26 @@ class StudentScanController extends Controller
             return back()->withErrors(['token' => 'Sesi tidak ditemukan atau sudah ditutup.']);
         }
 
-        $student = $request->user();
-        $classId = $session->jadwal?->id_kelas;
-        $studentClassId = $student->siswaProfile?->id_kelas;
+        $siswa = Siswa::find($request->user()->id_ref);
 
-        if ($classId && (int) $studentClassId !== (int) $classId) {
+        if (! $siswa) {
+            return back()->withErrors(['token' => 'Data siswa tidak ditemukan.']);
+        }
+
+        if ((int) $siswa->id_kelas !== (int) $session->jadwal?->id_kelas) {
             return back()->withErrors(['token' => 'Token sesi ini tidak sesuai dengan kelas Anda.']);
         }
 
-        Attendance::updateOrCreate(
+        Presensi::updateOrCreate(
             [
-                'student_id' => $student->id,
-                'date' => Carbon::today()->toDateString(),
+                'id_sesi' => $session->id_sesi,
+                'id_siswa' => $siswa->id_siswa,
             ],
             [
                 'status' => 'hadir',
-                'note' => 'Scan QR: ' . ($session->jadwal?->mapel?->nama_mapel ?? '-'),
-                'recorded_by' => $session->jadwal?->guru?->user?->id,
+                'edited_by' => null,
+                'scanned_at' => now(),
+                'method' => 'scan',
             ]
         );
 

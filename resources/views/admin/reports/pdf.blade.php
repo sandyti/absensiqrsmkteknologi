@@ -26,7 +26,7 @@
             </div>
         @endif
 
-        <h1>Rekap Absensi</h1>
+        <h1>Rekap Presensi</h1>
         <div class="subtitle">Rentang: {{ $titleRange }}</div>
 
         <div class="meta">
@@ -37,28 +37,28 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 18%;">Tanggal</th>
+                    <th style="width: 18%;">Waktu</th>
                     <th style="width: 25%;">Siswa</th>
                     <th style="width: 12%;">Status</th>
-                    <th style="width: 20%;">Dicatat Oleh</th>
-                    <th>Catatan</th>
+                    <th style="width: 15%;">Metode</th>
+                    <th style="width: 20%;">Diubah Oleh</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($records as $record)
                     <tr>
-                        <td>{{ $record->date->translatedFormat('d F Y') }}</td>
+                        <td>{{ $record->scanned_at?->translatedFormat('d F Y H:i') ?? '-' }}</td>
                         <td>
-                            <div><strong>{{ $record->student->name ?? '-' }}</strong></div>
-                            <div class="small">{{ $record->student->siswaProfile?->kelas?->nama ?? '-' }}</div>
+                            <div><strong>{{ $record->siswa?->nama ?? '-' }}</strong></div>
+                            <div class="small">{{ $record->siswa?->kelas?->nama ?? '-' }}</div>
                         </td>
                         <td style="text-transform: capitalize;">{{ $record->status }}</td>
-                        <td>{{ $record->recorder->name ?? '-' }}</td>
-                        <td>{{ $record->note ?? '-' }}</td>
+                        <td style="text-transform: capitalize;">{{ $record->method }}</td>
+                        <td>{{ $record->editor?->nama ?? '-' }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center">Belum ada data absensi.</td>
+                        <td colspan="5" class="text-center">Belum ada data presensi.</td>
                     </tr>
                 @endforelse
             </tbody>

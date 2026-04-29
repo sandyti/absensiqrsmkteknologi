@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attendance;
 use App\Models\Guru;
+use App\Models\Presensi;
 use App\Models\Siswa;
 use App\Models\User;
 use Carbon\Carbon;
@@ -38,11 +38,11 @@ class DashboardController extends Controller
                 'total_users' => User::count(),
                 'total_siswa' => Siswa::count(),
                 'total_guru' => Guru::count(),
-                'attendances_today' => Attendance::whereDate('date', $today)->count(),
+                'presensis_today' => Presensi::whereDate('scanned_at', $today)->count(),
             ];
 
-            $statusCounts = Attendance::selectRaw('status, COUNT(*) as total')
-                ->whereBetween('date', [$rangeStart, $rangeEnd])
+            $statusCounts = Presensi::selectRaw('status, COUNT(*) as total')
+                ->whereBetween('scanned_at', [$rangeStart->copy()->startOfDay(), $rangeEnd->copy()->endOfDay()])
                 ->groupBy('status')
                 ->pluck('total', 'status')
                 ->toArray();
@@ -65,14 +65,14 @@ class DashboardController extends Controller
         }
 
         if ($user->isGuru()) {
-            $students = User::where('role', User::ROLE_SISWA)->orderBy('username')->get();
-            $todayAttendance = Attendance::whereDate('date', $today)->get()->keyBy('student_id');
+            $students = Siswa::with('kelas')->orderBy('nama')->get();
+            $todayPresensi = Presensi::whereDate('scanned_at', $today)->get()->keyBy('id_siswa');
 
-            return view('dashboard', compact('user', 'students', 'today', 'todayAttendance'));
+            return view('dashboard', compact('user', 'students', 'today', 'todayPresensi'));
         }
 
-        $records = $user->attendances()->latest('date')->limit(10)->get();
-        $todayRecord = $user->attendances()->whereDate('date', $today)->first();
+        $records = $user->presensis()->with(['sesiPresensi.jadwal.mapel', 'sesiPresensi.jadwal.kelas'])->latest('scanned_at')->limit(10)->get();
+        $todayRecord = $user->presensis()->whereDate('scanned_at', $today)->first();
 
         return view('dashboard', compact('user', 'records', 'today', 'todayRecord'));
     }

@@ -9,7 +9,7 @@
     <div class="py-6">
         <div class="max-w-md mx-auto bg-white border border-gray-200 rounded-lg shadow-sm p-6 space-y-4">
             <div class="text-center">
-                <h3 class="text-2xl font-extrabold text-gray-900 tracking-wide">RIWAYAT ABSENSI</h3>
+                <h3 class="text-2xl font-extrabold text-gray-900 tracking-wide">RIWAYAT PRESENSI</h3>
             </div>
 
             <form method="GET" class="grid grid-cols-1 gap-3">
@@ -42,14 +42,22 @@
                 <div class="space-y-3 max-h-80 overflow-y-auto text-sm text-gray-800">
                     @forelse ($records as $record)
                         <div class="border border-gray-200 rounded-md p-2">
-                            <div class="text-xs text-gray-500">{{ $record->date->translatedFormat('d F Y') }}</div>
+                            <div class="text-xs text-gray-500">
+                                {{ $record->scanned_at?->translatedFormat('d F Y H:i') ?? '-' }}
+                            </div>
                             <div class="capitalize font-semibold">{{ $record->status }}</div>
-                            @if ($record->note)
-                                <div class="text-xs text-gray-600 mt-1">Catatan: {{ $record->note }}</div>
-                            @endif
+                            <div class="text-xs text-gray-600 mt-1">
+                                Metode: {{ $record->method }}
+                            </div>
+                            <div class="text-xs text-gray-600">
+                                Edit oleh: {{ $record->editor?->nama ?? '-' }}
+                            </div>
+                            <div class="text-xs text-gray-600">
+                                Jadwal: {{ $record->sesiPresensi?->jadwal?->mapel?->nama_mapel ?? '-' }}
+                            </div>
                         </div>
                     @empty
-                        <p class="text-center text-gray-500">Belum ada data absensi.</p>
+                        <p class="text-center text-gray-500">Belum ada data presensi.</p>
                     @endforelse
                 </div>
                 <div class="mt-3">

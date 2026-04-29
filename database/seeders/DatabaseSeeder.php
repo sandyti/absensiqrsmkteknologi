@@ -6,6 +6,8 @@ use App\Models\Guru;
 use App\Models\Jadwal;
 use App\Models\Kelas;
 use App\Models\Mapel;
+use App\Models\Presensi;
+use App\Models\SesiPresensi;
 use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -49,13 +51,20 @@ class DatabaseSeeder extends Seeder
             'nama_mapel' => 'Matematika',
         ]);
 
-        Jadwal::create([
+        $jadwal = Jadwal::create([
             'id_kelas' => $kelas->getKey(),
             'id_mapel' => $mapel->getKey(),
             'id_guru' => $guruDetail->getKey(),
             'hari' => 'Senin',
             'jam_mulai' => '07:00:00',
             'jam_selesai' => '08:30:00',
+        ]);
+
+        $sesi = SesiPresensi::create([
+            'id_jadwal' => $jadwal->getKey(),
+            'tanggal' => now()->toDateString(),
+            'token' => 'SEED-'.now()->format('Ymd'),
+            'status' => 'open',
         ]);
 
         $students = collect();
@@ -74,11 +83,14 @@ class DatabaseSeeder extends Seeder
         }
 
         // Tambahkan kehadiran contoh supaya dashboard tidak kosong.
-        $students->each(function (User $student) use ($guru): void {
-            $student->attendances()->create([
-                'date' => now()->toDateString(),
+        $students->each(function (User $student) use ($guru, $sesi): void {
+            Presensi::create([
+                'id_sesi' => $sesi->getKey(),
+                'id_siswa' => $student->id_ref,
                 'status' => 'hadir',
-                'recorded_by' => $guru->id,
+                'edited_by' => $guru->guruProfile?->id_guru,
+                'scanned_at' => now(),
+                'method' => 'manual',
             ]);
         });
     }
