@@ -59,8 +59,8 @@
                                         <input name="name" class="mt-1 w-full rounded border-gray-300 text-sm" required>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Email</label>
-                                        <input name="email" type="email" class="mt-1 w-full rounded border-gray-300 text-sm" required>
+                                        <label class="block text-sm font-medium text-gray-700">Username</label>
+                                        <input name="username" type="text" class="mt-1 w-full rounded border-gray-300 text-sm" required>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Password (opsional, default: password)</label>
@@ -119,7 +119,7 @@
                                                 <tr>
                                                     <td class="px-4 py-2">
                                                         <div class="font-semibold text-gray-800">{{ $teacher->name }}</div>
-                                                        <div class="text-xs text-gray-500">{{ $teacher->email }}</div>
+                                                        <div class="text-xs text-gray-500">{{ $teacher->username }}</div>
                                                         @if ($teacher->identifier)
                                                             <div class="text-xs text-gray-500">ID: {{ $teacher->identifier }}</div>
                                                         @endif

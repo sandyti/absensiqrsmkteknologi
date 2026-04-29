@@ -14,7 +14,7 @@ class AttendanceController extends Controller
     public function manage(): View
     {
         $today = Carbon::today();
-        $students = User::where('role', User::ROLE_SISWA)->orderBy('name')->get();
+        $students = User::where('role', User::ROLE_SISWA)->orderBy('username')->get();
         $todayAttendance = Attendance::whereDate('date', $today)->get()->keyBy('student_id');
 
         return view('attendance.manage', compact('students', 'today', 'todayAttendance'));

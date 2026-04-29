@@ -31,8 +31,8 @@ class TeacherSessionController extends Controller
         $students = collect();
         if ($selectedClass) {
             $students = User::where('role', User::ROLE_SISWA)
-                ->where('classroom', $selectedClass->name)
-                ->orderBy('name')
+                ->whereHas('siswaProfile', fn ($q) => $q->where('classroom', $selectedClass->name))
+                ->orderBy('username')
                 ->get();
         }
 
@@ -51,7 +51,7 @@ class TeacherSessionController extends Controller
         if ($activeSession && $selectedClass) {
             $scans = Attendance::with('student')
                 ->whereDate('date', Carbon::today())
-                ->whereHas('student', function ($query) use ($selectedClass) {
+                ->whereHas('student.siswaProfile', function ($query) use ($selectedClass) {
                     $query->where('classroom', $selectedClass->name);
                 })
                 ->latest()
@@ -241,7 +241,7 @@ class TeacherSessionController extends Controller
         $scans = Attendance::with('student')
             ->whereDate('date', Carbon::today())
             ->when($class?->name, function ($query, $className) {
-                $query->whereHas('student', function ($q) use ($className) {
+                $query->whereHas('student.siswaProfile', function ($q) use ($className) {
                     $q->where('classroom', $className);
                 });
             })

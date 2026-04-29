@@ -32,26 +32,26 @@ class NewPasswordController extends Controller
     {
         $request->validate([
             'token' => ['required'],
-            'email' => ['required', 'email'],
+            'username' => ['required', 'string'],
             'role' => ['required', 'string'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $role = $this->normalizeRole($request->string('role'));
         $userForRole = $role
-            ? User::where('email', $request->string('email'))->where('role', $role)->first()
+            ? User::where('username', $request->string('username'))->where('role', $role)->first()
             : null;
 
         if (! $userForRole) {
-            return back()->withInput($request->only('email', 'role'))
-                ->withErrors(['email' => __('auth.user')]);
+            return back()->withInput($request->only('username', 'role'))
+                ->withErrors(['username' => __('auth.user')]);
         }
 
         // Here we will attempt to reset the user's password. If it is successful we
         // will update the password on an actual user model and persist it to the
         // database. Otherwise we will parse the error and return the response.
         $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
+            $request->only('username', 'password', 'password_confirmation', 'token'),
             function (User $user) use ($request, $role) {
                 if ($role && $user->role !== $role) {
                     return;
@@ -71,8 +71,8 @@ class NewPasswordController extends Controller
         // redirect them back to where they came from with their error message.
         return $status == Password::PASSWORD_RESET
                     ? redirect()->route('login')->with('status', __($status))
-                    : back()->withInput($request->only('email', 'role'))
-                        ->withErrors(['email' => __($status)]);
+                    : back()->withInput($request->only('username', 'role'))
+                        ->withErrors(['username' => __($status)]);
     }
 
     private function normalizeRole(string $role): ?string

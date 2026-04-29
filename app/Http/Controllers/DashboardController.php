@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\Guru;
+use App\Models\Siswa;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -34,8 +36,8 @@ class DashboardController extends Controller
 
             $summary = [
                 'total_users' => User::count(),
-                'total_siswa' => User::where('role', User::ROLE_SISWA)->count(),
-                'total_guru' => User::where('role', User::ROLE_GURU)->count(),
+                'total_siswa' => Siswa::count(),
+                'total_guru' => Guru::count(),
                 'attendances_today' => Attendance::whereDate('date', $today)->count(),
             ];
 
@@ -63,7 +65,7 @@ class DashboardController extends Controller
         }
 
         if ($user->isGuru()) {
-            $students = User::where('role', User::ROLE_SISWA)->orderBy('name')->get();
+            $students = User::where('role', User::ROLE_SISWA)->orderBy('username')->get();
             $todayAttendance = Attendance::whereDate('date', $today)->get()->keyBy('student_id');
 
             return view('dashboard', compact('user', 'students', 'today', 'todayAttendance'));

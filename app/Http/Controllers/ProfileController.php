@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Guru;
+use App\Models\Siswa;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,13 +28,32 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $validated = $request->validated();
+        $user->forceFill([
+            'username' => $validated['username'],
+        ])->save();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isGuru()) {
+            $guru = $user->guruProfile ?: new Guru();
+            $guru->fill([
+                'name' => $validated['name'],
+                'identifier' => $user->identifier,
+            ])->save();
+
+            $user->forceFill(['id_ref' => $guru->id])->save();
         }
 
-        $request->user()->save();
+        if ($user->isSiswa()) {
+            $siswa = $user->siswaProfile ?: new Siswa();
+            $siswa->fill([
+                'name' => $validated['name'],
+                'identifier' => $user->identifier,
+                'classroom' => $user->classroom,
+            ])->save();
+
+            $user->forceFill(['id_ref' => $siswa->id])->save();
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Guru;
+use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -16,24 +18,42 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $admin = User::factory()->create([
-            'name' => 'Administrator',
-            'email' => 'admin@example.com',
+            'username' => 'admin',
             'role' => User::ROLE_ADMIN,
-            'identifier' => 'ADMIN001',
             'password' => 'password',
+        ]);
+
+        $guruDetail = Guru::create([
+            'name' => 'Guru Utama',
+            'identifier' => 'GURU001',
+            'teaches_class' => 'X-A, X-B',
+            'subject' => 'Matematika',
+            'teaching_hours' => '07:00-09:00',
         ]);
 
         $guru = User::factory()->create([
-            'name' => 'Guru Utama',
-            'email' => 'guru@example.com',
+            'username' => 'guru',
             'role' => User::ROLE_GURU,
-            'identifier' => 'GURU001',
+            'id_ref' => $guruDetail->id,
             'password' => 'password',
         ]);
 
-        $students = User::factory(8)->create([
-            'role' => User::ROLE_SISWA,
-        ]);
+        $guruDetail->user()->save($guru);
+
+        $students = collect();
+        foreach (range(1, 8) as $index) {
+            $studentDetail = Siswa::create([
+                'name' => 'Siswa '.$index,
+                'identifier' => 'NIS'.str_pad((string) $index, 4, '0', STR_PAD_LEFT),
+                'classroom' => 'X-A',
+            ]);
+
+            $students->push(User::factory()->create([
+                'username' => 'siswa'.$index,
+                'role' => User::ROLE_SISWA,
+                'id_ref' => $studentDetail->id,
+            ]));
+        }
 
         // Tambahkan kehadiran contoh supaya dashboard tidak kosong.
         $students->each(function (User $student) use ($guru): void {

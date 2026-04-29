@@ -20,8 +20,8 @@
                         <input name="name" value="{{ old('name', $student->name) }}" class="mt-1 w-full rounded border-gray-300 text-sm" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Email</label>
-                        <input name="email" type="email" value="{{ old('email', $student->email) }}" class="mt-1 w-full rounded border-gray-300 text-sm" required>
+                        <label class="block text-sm font-medium text-gray-700">Username</label>
+                        <input name="username" type="text" value="{{ old('username', $student->username) }}" class="mt-1 w-full rounded border-gray-300 text-sm" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Password (biarkan kosong jika tidak diubah)</label>

@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -22,14 +23,10 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
-        'email',
+        'id_user',
+        'username',
+        'id_ref',
         'role',
-        'identifier',
-        'classroom',
-        'teaches_class',
-        'subject',
-        'teaching_hours',
         'password',
     ];
 
@@ -51,9 +48,17 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $user): void {
+            if (blank($user->id_user)) {
+                $user->id_user = (string) Str::ulid();
+            }
+        });
     }
 
     /**
@@ -75,6 +80,76 @@ class User extends Authenticatable
     public function subjects()
     {
         return $this->belongsToMany(Subject::class, 'subject_student', 'student_id', 'subject_id');
+    }
+
+    public function getNameAttribute(): string
+    {
+        if ($this->role === self::ROLE_ADMIN) {
+            return 'Administrator';
+        }
+
+        if ($this->role === self::ROLE_GURU) {
+            return (string) ($this->guruProfile?->name ?? $this->username);
+        }
+
+        if ($this->role === self::ROLE_SISWA) {
+            return (string) ($this->siswaProfile?->name ?? $this->username);
+        }
+
+        return (string) $this->username;
+    }
+
+    public function getEmailAttribute(): string
+    {
+        return (string) $this->username;
+    }
+
+    public function getIdentifierAttribute(): ?string
+    {
+        if ($this->role === self::ROLE_GURU) {
+            return $this->guruProfile?->identifier;
+        }
+
+        if ($this->role === self::ROLE_SISWA) {
+            return $this->siswaProfile?->identifier;
+        }
+
+        return null;
+    }
+
+    public function getClassroomAttribute(): ?string
+    {
+        return $this->role === self::ROLE_SISWA ? $this->siswaProfile?->classroom : null;
+    }
+
+    public function getTeachesClassAttribute(): ?string
+    {
+        return $this->role === self::ROLE_GURU ? $this->guruProfile?->teaches_class : null;
+    }
+
+    public function getSubjectAttribute(): ?string
+    {
+        return $this->role === self::ROLE_GURU ? $this->guruProfile?->subject : null;
+    }
+
+    public function getTeachingHoursAttribute(): ?string
+    {
+        return $this->role === self::ROLE_GURU ? $this->guruProfile?->teaching_hours : null;
+    }
+
+    public function guruProfile()
+    {
+        return $this->belongsTo(Guru::class, 'id_ref');
+    }
+
+    public function siswaProfile()
+    {
+        return $this->belongsTo(Siswa::class, 'id_ref');
+    }
+
+    public function getEmailForPasswordReset(): string
+    {
+        return (string) $this->username;
     }
 
     public function isAdmin(): bool

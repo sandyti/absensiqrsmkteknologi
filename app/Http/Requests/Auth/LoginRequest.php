@@ -29,7 +29,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'username' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -44,10 +44,10 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         $roleInput = $this->normalizedRole();
-        $credentials = $this->only('email', 'password');
+        $credentials = $this->only('username', 'password');
         $remember = $this->boolean('remember');
 
-        $user = User::where('email', $this->string('email'))->first();
+        $user = User::where('username', $this->string('username'))->first();
         $allowedRoles = $this->allowedRoles($roleInput);
 
         if (
@@ -70,7 +70,7 @@ class LoginRequest extends FormRequest
         RateLimiter::hit($this->throttleKey());
 
         $exception = ValidationException::withMessages([
-            'email' => trans('auth.failed'),
+            'username' => trans('auth.failed'),
         ]);
 
         // Redirect back to role-specific login if provided, else home.
@@ -100,9 +100,9 @@ class LoginRequest extends FormRequest
 
         throw ValidationException::withMessages([
             'email' => trans('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
+            'seconds' => $seconds,
+            'minutes' => ceil($seconds / 60),
+        ]),
         ]);
     }
 
@@ -111,7 +111,7 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('username')).'|'.$this->ip());
     }
 
     private function normalizedRole(): ?string

@@ -72,12 +72,12 @@ class ReportController extends Controller
             $classes = SchoolClass::whereIn('id', $subjects->pluck('class_id')->filter())->orderBy('name')->get();
             $classNames = $classes->pluck('name');
             $students = User::where('role', User::ROLE_SISWA)
-                ->when($classNames->isNotEmpty(), fn ($q) => $q->whereIn('classroom', $classNames))
-                ->orderBy('name')
+                ->when($classNames->isNotEmpty(), fn ($q) => $q->whereHas('siswaProfile', fn ($sq) => $sq->whereIn('classroom', $classNames)))
+                ->orderBy('username')
                 ->get();
         } else {
             $subjects = Subject::orderBy('name')->get();
-            $students = User::where('role', User::ROLE_SISWA)->orderBy('name')->get();
+            $students = User::where('role', User::ROLE_SISWA)->orderBy('username')->get();
             $classes = SchoolClass::orderBy('name')->get();
             $classNames = $classes->pluck('name');
         }
@@ -103,14 +103,18 @@ class ReportController extends Controller
             })
             ->when($filters['class_id'] ?? null, function ($q, $classId) {
                 $q->whereHas('student', function ($sq) use ($classId) {
-                    $sq->where('classroom', SchoolClass::find($classId)?->name);
+                    $sq->whereHas('siswaProfile', function ($profile) use ($classId) {
+                        $profile->where('classroom', SchoolClass::find($classId)?->name);
+                    });
                 });
             })
             ->when($filters['student_id'] ?? null, fn ($q, $studentId) => $q->where('student_id', $studentId));
 
         if ($user->isGuru() && isset($classNames) && $classNames->isNotEmpty()) {
             $query->whereHas('student', function ($sq) use ($classNames) {
-                $sq->whereIn('classroom', $classNames);
+                $sq->whereHas('siswaProfile', function ($profile) use ($classNames) {
+                    $profile->whereIn('classroom', $classNames);
+                });
             });
         }
 

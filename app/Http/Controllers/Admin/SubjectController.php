@@ -15,8 +15,8 @@ class SubjectController extends Controller
     public function index(): View
     {
         $subjects = Subject::with(['teacher', 'students'])->orderBy('name')->get();
-        $teachers = User::where('role', User::ROLE_GURU)->orderBy('name')->get();
-        $students = User::where('role', User::ROLE_SISWA)->orderBy('name')->get();
+        $teachers = User::where('role', User::ROLE_GURU)->orderBy('username')->get();
+        $students = User::where('role', User::ROLE_SISWA)->orderBy('username')->get();
         $classes = SchoolClass::orderBy('name')->get();
 
         return view('admin.subjects.index', compact('subjects', 'teachers', 'students', 'classes'));
@@ -56,8 +56,8 @@ class SubjectController extends Controller
 
     public function edit(Subject $subject): View
     {
-        $teachers = User::where('role', User::ROLE_GURU)->orderBy('name')->get();
-        $students = User::where('role', User::ROLE_SISWA)->orderBy('name')->get();
+        $teachers = User::where('role', User::ROLE_GURU)->orderBy('username')->get();
+        $students = User::where('role', User::ROLE_SISWA)->orderBy('username')->get();
         $classes = SchoolClass::orderBy('name')->get();
 
         $subject->load('students');
