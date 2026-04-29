@@ -30,9 +30,9 @@ class StudentController extends Controller
     {
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:users,username'],
-            'nis' => ['required', 'string', 'max:50', 'unique:siswas,nis'],
-            'id_kelas' => ['nullable', 'exists:school_classes,id_kelas'],
+            'username' => ['required', 'string', 'max:255', 'unique:user,username'],
+            'nis' => ['required', 'string', 'max:50', 'unique:siswa,nis'],
+            'id_kelas' => ['nullable', 'exists:kelas,id_kelas'],
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 
@@ -68,14 +68,14 @@ class StudentController extends Controller
 
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$student->id],
+            'username' => ['required', 'string', 'max:255', 'unique:user,username,'.$student->id],
             'nis' => [
                 'required',
                 'string',
                 'max:50',
-                Rule::unique('siswas', 'nis')->ignore($student->id_ref, 'id_siswa'),
+                Rule::unique('siswa', 'nis')->ignore($student->id_ref, 'id_siswa'),
             ],
-            'id_kelas' => ['nullable', 'exists:school_classes,id_kelas'],
+            'id_kelas' => ['nullable', 'exists:kelas,id_kelas'],
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 

@@ -66,7 +66,7 @@ class TeacherSessionController extends Controller
     public function start(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'jadwal_id' => ['required', 'exists:jadwals,id_jadwal'],
+            'jadwal_id' => ['required', 'exists:jadwal,id_jadwal'],
         ]);
 
         $jadwal = $this->accessibleJadwal($request, (int) $data['jadwal_id']);
@@ -93,7 +93,7 @@ class TeacherSessionController extends Controller
     public function close(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'jadwal_id' => ['required', 'exists:jadwals,id_jadwal'],
+            'jadwal_id' => ['required', 'exists:jadwal,id_jadwal'],
         ]);
 
         $session = SesiPresensi::where('id_jadwal', $data['jadwal_id'])
@@ -117,8 +117,8 @@ class TeacherSessionController extends Controller
     public function markManual(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'jadwal_id' => ['required', 'exists:jadwals,id_jadwal'],
-            'id_siswa' => ['required', 'exists:siswas,id_siswa'],
+            'jadwal_id' => ['required', 'exists:jadwal,id_jadwal'],
+            'id_siswa' => ['required', 'exists:siswa,id_siswa'],
             'status' => ['required', 'in:hadir,izin,sakit,alpa,terlambat'],
         ]);
 
@@ -160,7 +160,7 @@ class TeacherSessionController extends Controller
     public function refreshToken(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'jadwal_id' => ['required', 'exists:jadwals,id_jadwal'],
+            'jadwal_id' => ['required', 'exists:jadwal,id_jadwal'],
         ]);
 
         $jadwal = $this->accessibleJadwal($request, (int) $data['jadwal_id']);
@@ -187,7 +187,7 @@ class TeacherSessionController extends Controller
     public function scans(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'jadwal_id' => ['required', 'exists:jadwals,id_jadwal'],
+            'jadwal_id' => ['required', 'exists:jadwal,id_jadwal'],
         ]);
 
         $jadwal = $this->accessibleJadwal($request, (int) $data['jadwal_id']);

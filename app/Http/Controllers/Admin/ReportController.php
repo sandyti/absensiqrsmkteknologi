@@ -65,8 +65,8 @@ class ReportController extends Controller
         $classes = Kelas::orderBy('nama')->get();
 
         $filters = $request->validate([
-            'student_id' => ['nullable', 'exists:siswas,id_siswa'],
-            'class_id' => ['nullable', 'exists:school_classes,id_kelas'],
+            'student_id' => ['nullable', 'exists:siswa,id_siswa'],
+            'class_id' => ['nullable', 'exists:kelas,id_kelas'],
             'range' => ['nullable', 'in:hari,minggu,bulan,tahun'],
             'date' => ['nullable', 'date'],
         ]);

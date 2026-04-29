@@ -9,7 +9,7 @@ class Guru extends Model
 {
     use HasFactory;
 
-    protected $table = 'gurus';
+    protected $table = 'guru';
 
     protected $primaryKey = 'id_guru';
 

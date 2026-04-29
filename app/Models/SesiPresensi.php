@@ -9,7 +9,7 @@ class SesiPresensi extends Model
 {
     use HasFactory;
 
-    protected $table = 'sesi_presensis';
+    protected $table = 'sesi_presensi';
 
     protected $primaryKey = 'id_sesi';
 

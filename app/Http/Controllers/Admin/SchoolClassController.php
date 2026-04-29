@@ -12,7 +12,7 @@ class SchoolClassController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'nama' => ['required', 'string', 'max:100', 'unique:school_classes,nama'],
+            'nama' => ['required', 'string', 'max:100', 'unique:kelas,nama'],
             'tingkat' => ['required', 'string', 'max:50'],
         ]);
 

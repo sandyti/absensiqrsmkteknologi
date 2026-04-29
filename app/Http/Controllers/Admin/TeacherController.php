@@ -28,8 +28,8 @@ class TeacherController extends Controller
     {
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
-            'nip' => ['nullable', 'string', 'max:50', 'unique:gurus,nip'],
-            'username' => ['required', 'string', 'max:255', 'unique:users,username'],
+            'nip' => ['nullable', 'string', 'max:50', 'unique:guru,nip'],
+            'username' => ['required', 'string', 'max:255', 'unique:user,username'],
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 
@@ -67,9 +67,9 @@ class TeacherController extends Controller
                 'nullable',
                 'string',
                 'max:50',
-                Rule::unique('gurus', 'nip')->ignore($teacher->id_ref, 'id_guru'),
+                Rule::unique('guru', 'nip')->ignore($teacher->id_ref, 'id_guru'),
             ],
-            'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$teacher->id],
+            'username' => ['required', 'string', 'max:255', 'unique:user,username,'.$teacher->id],
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 

@@ -21,7 +21,7 @@ class AttendanceController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'id_sesi' => ['required', 'exists:sesi_presensis,id_sesi'],
+            'id_sesi' => ['required', 'exists:sesi_presensi,id_sesi'],
             'statuses' => ['required', 'array'],
             'statuses.*' => ['required', 'in:hadir,izin,sakit,alpa,terlambat'],
         ]);

@@ -36,9 +36,9 @@ class RegisteredUserController extends Controller
     {
         $validated = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:users,username'],
-            'nis' => ['required', 'string', 'max:50', 'unique:siswas,nis'],
-            'id_kelas' => ['nullable', 'exists:school_classes,id_kelas'],
+            'username' => ['required', 'string', 'max:255', 'unique:user,username'],
+            'nis' => ['required', 'string', 'max:50', 'unique:siswa,nis'],
+            'id_kelas' => ['nullable', 'exists:kelas,id_kelas'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
