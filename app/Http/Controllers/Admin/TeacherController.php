@@ -4,64 +4,46 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Guru;
-use App\Models\Kelas;
-use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
-use Illuminate\Support\Collection;
 
 class TeacherController extends Controller
 {
     public function index(): View
     {
-        $teachers = User::where('role', User::ROLE_GURU)
+        $teachers = User::with('guruProfile')
+            ->where('role', User::ROLE_GURU)
             ->orderBy('username')
             ->get();
 
-        $classes = Kelas::orderBy('nama')->get();
-        $subjects = Subject::orderBy('name')->get();
-
-        return view('admin.teachers.index', compact('teachers', 'classes', 'subjects'));
+        return view('admin.teachers.index', compact('teachers'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'nama' => ['required', 'string', 'max:255'],
+            'nip' => ['nullable', 'string', 'max:50', 'unique:gurus,nip'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
-            'identifier' => ['nullable', 'string', 'max:50'],
-            'class_ids' => ['array'],
-            'class_ids.*' => ['exists:school_classes,id_kelas'],
-            'teaches_class' => ['nullable', 'string', 'max:200'],
-            'subject_ids' => ['array'],
-            'subject_ids.*' => ['exists:subjects,id'],
-            'subject' => ['nullable', 'string', 'max:200'],
-            'teaching_hours' => ['nullable', 'string', 'max:100'],
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 
-        $classNames = $this->resolveClassNames($request);
-        $subjectNames = $this->resolveSubjectNames($request, $data);
-        $data['teaching_hours'] = $subjectNames['time_slot'] ?? $data['teaching_hours'];
-
-        DB::transaction(function () use ($data, $classNames, $subjectNames): void {
+        DB::transaction(function () use ($data): void {
             $guru = Guru::create([
-                'name' => $data['name'],
-                'identifier' => $data['identifier'] ?? null,
-                'teaches_class' => $classNames,
-                'subject' => $subjectNames['names'],
-                'teaching_hours' => $subjectNames['time_slot'] ?? $data['teaching_hours'],
+                'nama' => $data['nama'],
+                'nip' => $data['nip'] ?? null,
             ]);
 
             User::create([
                 'username' => $data['username'],
                 'password' => Hash::make($data['password'] ?? 'password'),
                 'role' => User::ROLE_GURU,
-                'id_ref' => $guru->id,
+                'id_ref' => $guru->getKey(),
             ]);
         });
 
@@ -72,10 +54,7 @@ class TeacherController extends Controller
     {
         abort_unless($teacher->isGuru(), 404);
 
-        $classes = Kelas::orderBy('nama')->get();
-        $subjects = Subject::orderBy('name')->get();
-
-        return view('admin.teachers.edit', compact('teacher', 'classes', 'subjects'));
+        return view('admin.teachers.edit', compact('teacher'));
     }
 
     public function update(Request $request, User $teacher): RedirectResponse
@@ -83,40 +62,29 @@ class TeacherController extends Controller
         abort_unless($teacher->isGuru(), 404);
 
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'nama' => ['required', 'string', 'max:255'],
+            'nip' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('gurus', 'nip')->ignore($teacher->id_ref, 'id_guru'),
+            ],
             'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$teacher->id],
-            'identifier' => ['nullable', 'string', 'max:50'],
-            'class_ids' => ['array'],
-            'class_ids.*' => ['exists:school_classes,id_kelas'],
-            'teaches_class' => ['nullable', 'string', 'max:200'],
-            'subject_ids' => ['array'],
-            'subject_ids.*' => ['exists:subjects,id'],
-            'subject' => ['nullable', 'string', 'max:200'],
-            'teaching_hours' => ['nullable', 'string', 'max:100'],
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 
-        $data['teaches_class'] = $this->resolveClassNames($request);
-        $subjectNames = $this->resolveSubjectNames($request, $data);
-        $data['subject'] = $subjectNames['names'];
-        $data['teaching_hours'] = $subjectNames['time_slot'] ?? $data['teaching_hours'];
-
-        DB::transaction(function () use ($teacher, $data, $subjectNames): void {
+        DB::transaction(function () use ($teacher, $data): void {
             $guru = $teacher->guruProfile ?: new Guru();
             $guru->fill([
-                'name' => $data['name'],
-                'identifier' => $data['identifier'] ?? null,
-                'teaches_class' => $data['teaches_class'],
-                'subject' => $subjectNames['names'],
-                'teaching_hours' => $subjectNames['time_slot'] ?? $data['teaching_hours'],
+                'nama' => $data['nama'],
+                'nip' => $data['nip'] ?? null,
             ])->save();
 
             $teacher->forceFill([
                 'username' => $data['username'],
                 'password' => ! empty($data['password']) ? Hash::make($data['password']) : $teacher->password,
+                'id_ref' => $guru->getKey(),
             ])->save();
-
-            $teacher->forceFill(['id_ref' => $guru->id])->save();
         });
 
         return redirect()->route('teachers.index')->with('status', 'Data guru diperbarui.');
@@ -132,43 +100,5 @@ class TeacherController extends Controller
         });
 
         return back()->with('status', 'Guru dihapus.');
-    }
-
-    private function resolveClassNames(Request $request): ?string
-    {
-        $selected = collect($request->input('class_ids', []))
-            ->filter()
-            ->map(fn ($id) => Kelas::find($id)?->nama)
-            ->filter();
-
-        $manual = collect(explode(',', (string) $request->input('teaches_class')))
-            ->map(fn ($name) => trim($name))
-            ->filter();
-
-        $names = $selected->merge($manual)->filter()->unique()->values();
-
-        return $names->isNotEmpty() ? $names->implode(', ') : null;
-    }
-
-    private function resolveSubjectNames(Request $request, array $data): array
-    {
-        $selected = collect($request->input('subject_ids', []))
-            ->filter()
-            ->map(fn ($id) => Subject::find($id))
-            ->filter();
-
-        $selectedNames = $selected->pluck('name')->filter();
-        $manual = collect(explode(',', (string) $request->input('subject')))
-            ->map(fn ($name) => trim($name))
-            ->filter();
-
-        $names = $selectedNames->merge($manual)->filter()->unique()->values();
-
-        $timeSlot = $selected->first()?->time_slot;
-
-        return [
-            'names' => $names->isNotEmpty() ? $names->implode(', ') : null,
-            'time_slot' => $timeSlot,
-        ];
     }
 }

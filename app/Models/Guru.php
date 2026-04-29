@@ -9,16 +9,17 @@ class Guru extends Model
 {
     use HasFactory;
 
+    protected $table = 'gurus';
+
+    protected $primaryKey = 'id_guru';
+
     protected $fillable = [
-        'name',
-        'identifier',
-        'teaches_class',
-        'subject',
-        'teaching_hours',
+        'nama',
+        'nip',
     ];
 
     public function user()
     {
-        return $this->hasOne(User::class, 'id_ref');
+        return $this->hasOne(User::class, 'id_ref', 'id_guru');
     }
 }

@@ -38,18 +38,18 @@ class ProfileController extends Controller
         if ($user->isGuru()) {
             $guru = $user->guruProfile ?: new Guru();
             $guru->fill([
-                'name' => $validated['name'],
-                'identifier' => $user->identifier,
+                'nama' => $validated['name'],
+                'nip' => $user->guruProfile?->nip,
             ])->save();
 
-            $user->forceFill(['id_ref' => $guru->id])->save();
+            $user->forceFill(['id_ref' => $guru->getKey()])->save();
         }
 
         if ($user->isSiswa()) {
             $siswa = $user->siswaProfile ?: new Siswa();
             $siswa->fill([
                 'nama' => $validated['name'],
-                'nis' => $user->identifier,
+                'nis' => $user->siswaProfile?->nis,
                 'id_kelas' => $user->siswaProfile?->id_kelas,
             ])->save();
 

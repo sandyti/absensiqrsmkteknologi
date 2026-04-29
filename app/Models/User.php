@@ -77,11 +77,6 @@ class User extends Authenticatable
         return $this->hasMany(Attendance::class, 'recorded_by');
     }
 
-    public function subjects()
-    {
-        return $this->belongsToMany(Subject::class, 'subject_student', 'student_id', 'subject_id');
-    }
-
     public function getNameAttribute(): string
     {
         if ($this->role === self::ROLE_ADMIN) {
@@ -89,7 +84,7 @@ class User extends Authenticatable
         }
 
         if ($this->role === self::ROLE_GURU) {
-            return (string) ($this->guruProfile?->name ?? $this->username);
+            return (string) ($this->guruProfile?->nama ?? $this->username);
         }
 
         if ($this->role === self::ROLE_SISWA) {
@@ -104,42 +99,9 @@ class User extends Authenticatable
         return (string) $this->username;
     }
 
-    public function getIdentifierAttribute(): ?string
-    {
-        if ($this->role === self::ROLE_GURU) {
-            return $this->guruProfile?->identifier;
-        }
-
-        if ($this->role === self::ROLE_SISWA) {
-            return $this->siswaProfile?->nis;
-        }
-
-        return null;
-    }
-
-    public function getClassroomAttribute(): ?string
-    {
-        return $this->role === self::ROLE_SISWA ? $this->siswaProfile?->kelas?->nama : null;
-    }
-
-    public function getTeachesClassAttribute(): ?string
-    {
-        return $this->role === self::ROLE_GURU ? $this->guruProfile?->teaches_class : null;
-    }
-
-    public function getSubjectAttribute(): ?string
-    {
-        return $this->role === self::ROLE_GURU ? $this->guruProfile?->subject : null;
-    }
-
-    public function getTeachingHoursAttribute(): ?string
-    {
-        return $this->role === self::ROLE_GURU ? $this->guruProfile?->teaching_hours : null;
-    }
-
     public function guruProfile()
     {
-        return $this->belongsTo(Guru::class, 'id_ref');
+        return $this->belongsTo(Guru::class, 'id_ref', 'id_guru');
     }
 
     public function siswaProfile()

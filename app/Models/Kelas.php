@@ -18,11 +18,6 @@ class Kelas extends Model
         'tingkat',
     ];
 
-    public function subjects()
-    {
-        return $this->hasMany(Subject::class, 'class_id', 'id_kelas');
-    }
-
     public function siswa()
     {
         return $this->hasMany(Siswa::class, 'id_kelas', 'id_kelas');

@@ -5,15 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Kelas;
-use App\Models\Subject;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\View\View;
 
 class ReportController extends Controller
 {
@@ -52,10 +51,7 @@ class ReportController extends Controller
     }
 
     /**
-     * Prepare data and query for report listing/export.
-     *
      * @return array{
-     *     subjects: Collection<int, Subject>,
      *     students: Collection<int, User>,
      *     classes: Collection<int, Kelas>,
      *     records: LengthAwarePaginator|Collection<int, Attendance>,
@@ -65,25 +61,10 @@ class ReportController extends Controller
      */
     private function prepareReportData(Request $request, bool $paginate = true): array
     {
-        $user = $request->user();
-
-        if ($user->isGuru()) {
-            $subjects = Subject::where('teacher_id', $user->id)->orderBy('name')->get();
-            $classes = Kelas::whereIn('id_kelas', $subjects->pluck('class_id')->filter())->orderBy('nama')->get();
-            $classNames = $classes->pluck('nama');
-            $students = User::where('role', User::ROLE_SISWA)
-                ->when($classNames->isNotEmpty(), fn ($q) => $q->whereHas('siswaProfile.kelas', fn ($sq) => $sq->whereIn('nama', $classNames)))
-                ->orderBy('username')
-                ->get();
-        } else {
-            $subjects = Subject::orderBy('name')->get();
-            $students = User::where('role', User::ROLE_SISWA)->orderBy('username')->get();
-            $classes = Kelas::orderBy('nama')->get();
-            $classNames = $classes->pluck('nama');
-        }
+        $students = User::where('role', User::ROLE_SISWA)->orderBy('username')->get();
+        $classes = Kelas::orderBy('nama')->get();
 
         $filters = $request->validate([
-            'subject_id' => ['nullable', 'exists:subjects,id'],
             'student_id' => ['nullable', 'exists:users,id'],
             'class_id' => ['nullable', 'exists:school_classes,id_kelas'],
             'range' => ['nullable', 'in:hari,minggu,bulan,tahun'],
@@ -94,29 +75,14 @@ class ReportController extends Controller
         $date = isset($filters['date']) ? Carbon::parse($filters['date']) : Carbon::today();
 
         $query = Attendance::with(['student', 'recorder'])
-            ->when($filters['subject_id'] ?? null, function ($q, $subjectId) {
-                $q->whereHas('student', function ($sq) use ($subjectId) {
-                    $sq->whereHas('subjects', function ($ssq) use ($subjectId) {
-                        $ssq->where('subjects.id', $subjectId);
-                    });
-                });
-            })
             ->when($filters['class_id'] ?? null, function ($q, $classId) {
                 $q->whereHas('student', function ($sq) use ($classId) {
                     $sq->whereHas('siswaProfile.kelas', function ($profile) use ($classId) {
-                        $profile->where('nama', Kelas::find($classId)?->nama);
+                        $profile->where('id_kelas', $classId);
                     });
                 });
             })
             ->when($filters['student_id'] ?? null, fn ($q, $studentId) => $q->where('student_id', $studentId));
-
-        if ($user->isGuru() && isset($classNames) && $classNames->isNotEmpty()) {
-            $query->whereHas('student', function ($sq) use ($classNames) {
-                $sq->whereHas('siswaProfile.kelas', function ($profile) use ($classNames) {
-                    $profile->whereIn('nama', $classNames);
-                });
-            });
-        }
 
         $titleRange = '';
         if ($range === 'hari') {
@@ -138,11 +104,9 @@ class ReportController extends Controller
             : $query->orderByDesc('date')->get();
 
         return [
-            'subjects' => $subjects,
             'students' => $students,
             'records' => $records,
             'filters' => [
-                'subject_id' => $filters['subject_id'] ?? null,
                 'student_id' => $filters['student_id'] ?? null,
                 'class_id' => $filters['class_id'] ?? null,
                 'range' => $range,

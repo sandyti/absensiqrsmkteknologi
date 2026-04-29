@@ -22,7 +22,7 @@
                             <a href="{{ route('dashboard') }}" class="block px-4 py-3 hover:bg-gray-100">Home</a>
                             <a href="{{ route('teachers.index') }}" class="block px-4 py-3 hover:bg-gray-100">Kelola Data Guru</a>
                             <a href="{{ route('students.index') }}" class="block px-4 py-3 bg-gray-200 font-semibold text-gray-800">Kelola Data Siswa</a>
-                            <a href="{{ route('subjects.index') }}" class="block px-4 py-3 hover:bg-gray-100">Kelola Data Mapel Dan Jam Pelajaran</a>
+                            <a href="{{ route('subjects.index') }}" class="block px-4 py-3 hover:bg-gray-100">Kelola Data Mapel</a>
                             <a href="{{ route('reports.index') }}" class="block px-4 py-3 hover:bg-gray-100">Rekap Absensi</a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf

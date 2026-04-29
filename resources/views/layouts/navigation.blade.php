@@ -27,7 +27,7 @@
                             Kelola Data Siswa
                         </x-nav-link>
                         <x-nav-link :href="route('subjects.index')" :active="request()->routeIs('subjects.*')">
-                            Kelola Data Mapel Dan Jam Pelajaran
+                            Kelola Data Mapel
                         </x-nav-link>
                         <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                             Rekap Absensi
@@ -105,7 +105,7 @@
                     Kelola Data Siswa
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('subjects.index')" :active="request()->routeIs('subjects.*')">
-                    Kelola Data Mapel Dan Jam Pelajaran
+                    Kelola Data Mapel
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                     Rekap Absensi

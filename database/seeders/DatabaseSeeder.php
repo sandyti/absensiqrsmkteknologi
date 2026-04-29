@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Guru;
 use App\Models\Kelas;
+use App\Models\Mapel;
 use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -30,21 +31,22 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $guruDetail = Guru::create([
-            'name' => 'Guru Utama',
-            'identifier' => 'GURU001',
-            'teaches_class' => 'X-A, X-B',
-            'subject' => 'Matematika',
-            'teaching_hours' => '07:00-09:00',
+            'nama' => 'Guru Utama',
+            'nip' => 'GURU001',
         ]);
 
         $guru = User::factory()->create([
             'username' => 'guru',
             'role' => User::ROLE_GURU,
-            'id_ref' => $guruDetail->id,
+            'id_ref' => $guruDetail->getKey(),
             'password' => 'password',
         ]);
 
         $guruDetail->user()->save($guru);
+
+        Mapel::create([
+            'nama_mapel' => 'Matematika',
+        ]);
 
         $students = collect();
         foreach (range(1, 8) as $index) {

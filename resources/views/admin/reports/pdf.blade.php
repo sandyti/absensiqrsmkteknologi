@@ -14,7 +14,6 @@
         th, td { border: 1px solid #d1d5db; padding: 6px 8px; }
         th { background: #f3f4f6; font-size: 11px; text-align: left; }
         td { font-size: 11px; }
-        .text-right { text-align: right; }
         .text-center { text-align: center; }
         .small { font-size: 10px; color: #6b7280; }
     </style>

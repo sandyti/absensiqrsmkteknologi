@@ -33,18 +33,14 @@
                     <select name="subject_id" class="mt-1 w-full rounded border-gray-300 text-sm" onchange="this.form.submit()">
                         <option value="">Pilih Mapel</option>
                         @foreach ($subjects as $subject)
-                            <option value="{{ $subject->id }}" @selected($selectedSubjectId == $subject->id)>{{ $subject->code ?? '' }} {{ $subject->name }}</option>
+                            <option value="{{ $subject->id_mapel }}" @selected($selectedSubjectId == $subject->id_mapel)>{{ $subject->nama_mapel }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Pilih Jam Pelajaran</label>
-                    <input class="mt-1 w-full rounded border-gray-300 text-sm" value="{{ $selectedSubject?->time_slot }}" readonly placeholder="Otomatis dari mapel">
-                </div>
-                <div>
                     <p class="text-xs text-gray-500">Daftar siswa diambil otomatis berdasarkan kelas yang dipilih.</p>
                 </div>
-        </form>
+            </form>
 
             <div class="border border-gray-300 rounded-md p-4 text-center">
                 @if ($showQr && $activeSession)
@@ -101,7 +97,7 @@
                             <select name="student_id" id="student-select" class="mt-1 w-full rounded border-gray-300 text-sm" required>
                                 <option value="">Pilih siswa</option>
                                 @foreach ($students as $student)
-                                    <option value="{{ $student->id }}">{{ $student->name }} — {{ $student->siswaProfile?->kelas?->nama ?? '-' }}</option>
+                                    <option value="{{ $student->id }}">{{ $student->name }} - {{ $student->siswaProfile?->kelas?->nama ?? '-' }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -141,6 +137,7 @@
             </div>
         </div>
     </div>
+
 @push('styles')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
@@ -160,6 +157,7 @@
         }
     </style>
 @endpush
+
 @push('scripts')
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -176,6 +174,7 @@
         });
     </script>
 @endpush
+
 @if ($showQr && $activeSession)
     @push('scripts')
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -222,8 +221,7 @@
                 renderQRCode(initialCode);
                 setInterval(refreshCode, 15000);
             }
-            
-            // Periodically fetch latest scan list without refreshing QR or the whole page.
+
             const scanIntervalMs = 5000;
             const scanListEl = document.getElementById('scan-list');
 
@@ -234,7 +232,7 @@
                     return;
                 }
 
-                const rows = items.map(item => {
+                scanListEl.innerHTML = items.map(item => {
                     const status = item.status ?? '-';
                     const time = item.time ? `<span class="text-[10px] text-gray-400">${item.time}</span>` : '';
                     return `
@@ -247,8 +245,6 @@
                         </div>
                     `;
                 }).join('');
-
-                scanListEl.innerHTML = rows;
             }
 
             async function refreshScans() {
@@ -268,7 +264,6 @@
                 }
             }, scanIntervalMs);
 
-            // initial load
             refreshScans();
         </script>
     @endpush

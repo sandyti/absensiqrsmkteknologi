@@ -33,7 +33,7 @@ class AttendanceSession extends Model
 
     public function subject()
     {
-        return $this->belongsTo(Subject::class);
+        return $this->belongsTo(Mapel::class, 'subject_id', 'id_mapel');
     }
 
     public function class()

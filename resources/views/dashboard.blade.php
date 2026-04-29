@@ -23,7 +23,7 @@
                                 <a href="{{ route('dashboard') }}" class="block px-4 py-3 {{ request()->routeIs('dashboard') ? 'bg-gray-200 font-semibold text-gray-800' : 'hover:bg-gray-100' }}">Home</a>
                                 <a href="{{ route('teachers.index') }}" class="block px-4 py-3 {{ request()->routeIs('teachers.*') ? 'bg-gray-200 font-semibold text-gray-800' : 'hover:bg-gray-100' }}">Kelola Data Guru</a>
                                 <a href="{{ route('students.index') }}" class="block px-4 py-3 {{ request()->routeIs('students.*') ? 'bg-gray-200 font-semibold text-gray-800' : 'hover:bg-gray-100' }}">Kelola Data Siswa</a>
-                                <a href="{{ route('subjects.index') }}" class="block px-4 py-3 {{ request()->routeIs('subjects.*') ? 'bg-gray-200 font-semibold text-gray-800' : 'hover:bg-gray-100' }}">Kelola Data Mapel Dan Jam Pelajaran</a>
+                                <a href="{{ route('subjects.index') }}" class="block px-4 py-3 {{ request()->routeIs('subjects.*') ? 'bg-gray-200 font-semibold text-gray-800' : 'hover:bg-gray-100' }}">Kelola Data Mapel</a>
                                 <a href="{{ route('reports.index') }}" class="block px-4 py-3 {{ request()->routeIs('reports.*') ? 'bg-gray-200 font-semibold text-gray-800' : 'hover:bg-gray-100' }}">Rekap Absensi</a>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
@@ -50,7 +50,7 @@
                                             <p class="text-2xl font-bold text-gray-900 mt-2">{{ $summary['total_siswa'] }}</p>
                                         </div>
                                         <div class="border border-gray-300 rounded-md p-3 text-center">
-                                            <p class="font-semibold text-gray-700">Data Mapel/Jam Mapel</p>
+                                            <p class="font-semibold text-gray-700">Data Mapel</p>
                                             <p class="text-2xl font-bold text-gray-900 mt-2">-</p>
                                         </div>
                                     </div>

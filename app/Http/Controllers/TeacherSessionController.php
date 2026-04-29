@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Models\Kelas;
-use App\Models\Subject;
+use App\Models\Mapel;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -20,13 +20,13 @@ class TeacherSessionController extends Controller
     {
         $teacher = $request->user();
         $classes = Kelas::orderBy('nama')->get();
-        $subjects = Subject::orderBy('name')->get();
+        $subjects = Mapel::orderBy('nama_mapel')->get();
 
         $selectedClassId = $request->query('class_id');
         $selectedSubjectId = $request->query('subject_id');
 
         $selectedClass = $selectedClassId ? $classes->firstWhere('id_kelas', (int) $selectedClassId) : null;
-        $selectedSubject = $selectedSubjectId ? $subjects->firstWhere('id', (int) $selectedSubjectId) : null;
+        $selectedSubject = $selectedSubjectId ? $subjects->firstWhere('id_mapel', (int) $selectedSubjectId) : null;
 
         $students = collect();
         if ($selectedClass) {
@@ -76,11 +76,11 @@ class TeacherSessionController extends Controller
     {
         $data = $request->validate([
             'class_id' => ['required', 'exists:school_classes,id_kelas'],
-            'subject_id' => ['required', 'exists:subjects,id'],
+            'subject_id' => ['required', 'exists:subjects,id_mapel'],
         ]);
 
         $class = Kelas::find($data['class_id']);
-        $subject = Subject::find($data['subject_id']);
+        $subject = Mapel::find($data['subject_id']);
 
         $session = AttendanceSession::updateOrCreate(
             [
@@ -175,7 +175,7 @@ class TeacherSessionController extends Controller
             'status' => ['required', 'in:hadir,izin,sakit,alpa,terlambat'],
             'note' => ['nullable', 'string'],
             'class_id' => ['nullable', 'exists:school_classes,id_kelas'],
-            'subject_id' => ['nullable', 'exists:subjects,id'],
+            'subject_id' => ['nullable', 'exists:subjects,id_mapel'],
         ]);
 
         Attendance::updateOrCreate(
@@ -207,15 +207,13 @@ class TeacherSessionController extends Controller
             return response()->json(['message' => 'Sesi tidak ditemukan'], 422);
         }
 
-        $newCode = $this->makeSessionCode($session->class, $session->subject);
-        $session->update(['code' => $newCode]);
+        $session->update(['code' => $this->makeSessionCode($session->class, $session->subject)]);
         $session->load(['subject', 'class']);
 
         return response()->json([
             'code' => $session->code,
-            'subject' => $session->subject?->name,
+            'subject' => $session->subject?->nama_mapel,
             'class' => $session->class?->nama,
-            'time_slot' => $session->subject?->time_slot,
         ]);
     }
 
@@ -258,13 +256,12 @@ class TeacherSessionController extends Controller
         return response()->json(['data' => $scans]);
     }
 
-    protected function makeSessionCode(?Kelas $class, ?Subject $subject): string
+    protected function makeSessionCode(?Kelas $class, ?Mapel $subject): string
     {
         $classPart = strtoupper($class?->nama ?? 'CLASS');
-        $subjectPart = strtoupper($subject?->code ?? $subject?->name ?? 'SUBJECT');
-        $timeSlot = $subject?->time_slot ? strtoupper($subject->time_slot) : '';
+        $subjectPart = strtoupper($subject?->nama_mapel ?? 'MAPEL');
         $random = Str::upper(Str::random(6));
 
-        return implode('|', array_filter([$classPart, $subjectPart, $timeSlot, $random]));
+        return implode('|', array_filter([$classPart, $subjectPart, $random]));
     }
 }

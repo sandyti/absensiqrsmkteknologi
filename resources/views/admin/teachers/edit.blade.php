@@ -16,56 +16,20 @@
                     @method('PUT')
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Nama Guru</label>
-                        <input name="name" value="{{ old('name', $teacher->name) }}" class="mt-1 w-full rounded border-gray-300 text-sm" required>
+                        <label class="block text-sm font-medium text-gray-700">Nama</label>
+                        <input name="nama" value="{{ old('nama', $teacher->guruProfile?->nama) }}" class="mt-1 w-full rounded border-gray-300 text-sm" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">NIP</label>
+                        <input name="nip" value="{{ old('nip', $teacher->guruProfile?->nip) }}" class="mt-1 w-full rounded border-gray-300 text-sm">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Username</label>
                         <input name="username" type="text" value="{{ old('username', $teacher->username) }}" class="mt-1 w-full rounded border-gray-300 text-sm" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Password (biarkan kosong jika tidak diubah)</label>
+                        <label class="block text-sm font-medium text-gray-700">Password</label>
                         <input name="password" type="text" class="mt-1 w-full rounded border-gray-300 text-sm" placeholder="password baru">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">NIP / Identifier</label>
-                        <input name="identifier" value="{{ old('identifier', $teacher->identifier) }}" class="mt-1 w-full rounded border-gray-300 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Kelas Yang Diajar</label>
-                        @php
-                            $assignedClasses = collect(explode(',', $teacher->teaches_class ?? ''))->map(fn($v) => trim($v))->filter()->toArray();
-                        @endphp
-                        <div class="mt-1 grid grid-cols-2 gap-2 text-sm max-h-32 overflow-y-auto border rounded p-2">
-                            @foreach ($classes as $class)
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" name="class_ids[]" value="{{ $class->id_kelas }}" class="rounded border-gray-300"
-                                        @checked(in_array($class->nama, $assignedClasses) || in_array($class->id_kelas, (array) old('class_ids', [])))>
-                                    <span>{{ $class->nama }} - {{ $class->tingkat }}</span>
-                                </label>
-                            @endforeach
-                        </div>
-                        <input name="teaches_class" value="{{ old('teaches_class', $teacher->teaches_class) }}" class="mt-2 w-full rounded border-gray-300 text-sm" placeholder="Atau ketik manual (pisahkan dengan koma)">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Mata Pelajaran</label>
-                        @php
-                            $assignedSubjects = collect(explode(',', $teacher->subject ?? ''))->map(fn($v) => trim($v))->filter()->toArray();
-                        @endphp
-                        <div class="mt-1 grid grid-cols-2 gap-2 text-sm max-h-32 overflow-y-auto border rounded p-2">
-                            @foreach ($subjects as $subject)
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" name="subject_ids[]" value="{{ $subject->id }}" class="rounded border-gray-300"
-                                        @checked(in_array($subject->name, $assignedSubjects) || in_array($subject->id, (array) old('subject_ids', [])))>
-                                    <span>{{ $subject->name }}</span>
-                                </label>
-                            @endforeach
-                        </div>
-                        <input name="subject" value="{{ old('subject', $teacher->subject) }}" class="mt-2 w-full rounded border-gray-300 text-sm" placeholder="Atau ketik manual (pisahkan dengan koma)">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Jam Pelajaran</label>
-                        <input name="teaching_hours" value="{{ old('teaching_hours', $teacher->teaching_hours) }}" class="mt-1 w-full rounded border-gray-300 text-sm" readonly>
                     </div>
 
                     <div class="flex items-center justify-between pt-2">
