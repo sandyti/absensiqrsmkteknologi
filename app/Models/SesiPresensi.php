@@ -18,12 +18,16 @@ class SesiPresensi extends Model
     protected $fillable = [
         'id_jadwal',
         'tanggal',
+        'start_time',
+        'end_time',
         'token',
         'status',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
     ];
 
     public function jadwal()

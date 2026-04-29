@@ -63,6 +63,8 @@ class DatabaseSeeder extends Seeder
         $sesi = SesiPresensi::create([
             'id_jadwal' => $jadwal->getKey(),
             'tanggal' => now()->toDateString(),
+            'start_time' => now(),
+            'end_time' => null,
             'token' => 'SEED-'.now()->format('Ymd'),
             'status' => 'open',
         ]);

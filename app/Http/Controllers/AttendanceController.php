@@ -5,26 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Presensi;
 use App\Models\SesiPresensi;
 use App\Models\Siswa;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 class AttendanceController extends Controller
 {
-    public function manage(): View
+    public function manage(): RedirectResponse
     {
-        $today = Carbon::today();
-        $students = Siswa::with('kelas')->orderBy('nama')->get();
-        $activeSession = SesiPresensi::whereDate('tanggal', $today)->latest('id_sesi')->first();
-        $todayPresensi = $activeSession
-            ? Presensi::with('siswa')
-                ->where('id_sesi', $activeSession->id_sesi)
-                ->get()
-                ->keyBy('id_siswa')
-            : collect();
-
-        return view('attendance.manage', compact('students', 'today', 'todayPresensi', 'activeSession'));
+        return redirect()->route('attendance.session');
     }
 
     public function store(Request $request): RedirectResponse
@@ -35,12 +26,27 @@ class AttendanceController extends Controller
             'statuses.*' => ['required', 'in:hadir,izin,sakit,alpa,terlambat'],
         ]);
 
+        $session = SesiPresensi::with('jadwal')->findOrFail($data['id_sesi']);
         $editorId = $request->user()->guruProfile?->id_guru;
 
+        if ($request->user()->isGuru() && (int) $session->jadwal?->id_guru !== (int) $editorId) {
+            abort(403);
+        }
+
+        if ($session->status !== 'open') {
+            return back()->withErrors(['id_sesi' => 'Sesi presensi sudah ditutup.']);
+        }
+
         foreach ($data['statuses'] as $siswaId => $status) {
+            $siswa = Siswa::find($siswaId);
+
+            if (! $siswa || (int) $siswa->id_kelas !== (int) $session->jadwal?->id_kelas) {
+                continue;
+            }
+
             Presensi::updateOrCreate(
                 [
-                    'id_sesi' => $data['id_sesi'],
+                    'id_sesi' => $session->id_sesi,
                     'id_siswa' => $siswaId,
                 ],
                 [
@@ -52,7 +58,9 @@ class AttendanceController extends Controller
             );
         }
 
-        return back()->with('status', 'Absensi berhasil disimpan.');
+        return redirect()->route('attendance.session', [
+            'jadwal_id' => $session->id_jadwal,
+        ])->with('status', 'Presensi manual berhasil disimpan.');
     }
 
     public function me(Request $request): View
@@ -81,7 +89,12 @@ class AttendanceController extends Controller
             $end = $anchor->copy()->endOfYear();
         }
 
-        $records = auth()->user()
+        $user = $request->user();
+        if (! $user instanceof User) {
+            abort(403);
+        }
+
+        $records = $user
             ->presensis()
             ->with(['sesiPresensi.jadwal.kelas', 'sesiPresensi.jadwal.mapel', 'editor', 'siswa.kelas'])
             ->whereBetween('scanned_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])

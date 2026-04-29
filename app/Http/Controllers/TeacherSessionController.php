@@ -77,6 +77,8 @@ class TeacherSessionController extends Controller
                 'tanggal' => Carbon::today()->toDateString(),
             ],
             [
+                'start_time' => now(),
+                'end_time' => null,
                 'token' => $this->makeToken($jadwal),
                 'status' => 'open',
             ]
@@ -101,7 +103,10 @@ class TeacherSessionController extends Controller
             ->first();
 
         if ($session) {
-            $session->update(['status' => 'closed']);
+            $session->update([
+                'status' => 'closed',
+                'end_time' => now(),
+            ]);
         }
 
         return redirect()->route('attendance.session', [

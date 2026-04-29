@@ -37,6 +37,10 @@
                         <div><span class="font-semibold">Guru:</span> {{ $selectedJadwal->guru?->nama ?? '-' }}</div>
                         <div><span class="font-semibold">Hari:</span> {{ $selectedJadwal->hari }}</div>
                         <div><span class="font-semibold">Jam:</span> {{ $selectedJadwal->jam_mulai }} - {{ $selectedJadwal->jam_selesai }}</div>
+                        @if ($activeSession)
+                            <div><span class="font-semibold">Mulai Sesi:</span> {{ $activeSession->start_time?->format('H:i:s') ?? '-' }}</div>
+                            <div><span class="font-semibold">Tutup Sesi:</span> {{ $activeSession->end_time?->format('H:i:s') ?? '-' }}</div>
+                        @endif
                     </div>
                 @endif
             </form>
