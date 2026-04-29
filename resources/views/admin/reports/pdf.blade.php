@@ -51,7 +51,7 @@
                         <td>{{ $record->date->translatedFormat('d F Y') }}</td>
                         <td>
                             <div><strong>{{ $record->student->name ?? '-' }}</strong></div>
-                            <div class="small">{{ $record->student->classroom ?? '-' }}</div>
+                            <div class="small">{{ $record->student->siswaProfile?->kelas?->nama ?? '-' }}</div>
                         </td>
                         <td style="text-transform: capitalize;">{{ $record->status }}</td>
                         <td>{{ $record->recorder->name ?? '-' }}</td>

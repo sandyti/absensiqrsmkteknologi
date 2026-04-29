@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Kelas;
 use App\Models\Subject;
 use App\Models\User;
-use App\Models\SchoolClass;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,7 +17,7 @@ class SubjectController extends Controller
         $subjects = Subject::with(['teacher', 'students'])->orderBy('name')->get();
         $teachers = User::where('role', User::ROLE_GURU)->orderBy('username')->get();
         $students = User::where('role', User::ROLE_SISWA)->orderBy('username')->get();
-        $classes = SchoolClass::orderBy('name')->get();
+        $classes = Kelas::orderBy('nama')->get();
 
         return view('admin.subjects.index', compact('subjects', 'teachers', 'students', 'classes'));
     }
@@ -30,14 +30,14 @@ class SubjectController extends Controller
             'time_slot' => ['nullable', 'string', 'max:100'],
             'teacher_id' => ['nullable', 'exists:users,id'],
             'classroom' => ['nullable', 'string', 'max:100'],
-            'class_id' => ['nullable', 'exists:school_classes,id'],
+            'class_id' => ['nullable', 'exists:school_classes,id_kelas'],
             'students' => ['array'],
             'students.*' => ['exists:users,id'],
         ]);
 
         $classroom = $data['classroom'] ?? null;
         if (! empty($data['class_id'])) {
-            $classroom = SchoolClass::find($data['class_id'])?->name;
+            $classroom = Kelas::find($data['class_id'])?->nama;
         }
 
         $subject = Subject::create([
@@ -58,7 +58,7 @@ class SubjectController extends Controller
     {
         $teachers = User::where('role', User::ROLE_GURU)->orderBy('username')->get();
         $students = User::where('role', User::ROLE_SISWA)->orderBy('username')->get();
-        $classes = SchoolClass::orderBy('name')->get();
+        $classes = Kelas::orderBy('nama')->get();
 
         $subject->load('students');
 
@@ -73,14 +73,14 @@ class SubjectController extends Controller
             'time_slot' => ['nullable', 'string', 'max:100'],
             'teacher_id' => ['nullable', 'exists:users,id'],
             'classroom' => ['nullable', 'string', 'max:100'],
-            'class_id' => ['nullable', 'exists:school_classes,id'],
+            'class_id' => ['nullable', 'exists:school_classes,id_kelas'],
             'students' => ['array'],
             'students.*' => ['exists:users,id'],
         ]);
 
         $classroom = $data['classroom'] ?? null;
         if (! empty($data['class_id'])) {
-            $classroom = SchoolClass::find($data['class_id'])?->name;
+            $classroom = Kelas::find($data['class_id'])?->nama;
         }
 
         $subject->update([

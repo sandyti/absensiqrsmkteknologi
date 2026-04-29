@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
-use App\Models\SchoolClass;
+use App\Models\Kelas;
 use App\Models\Subject;
 use App\Models\User;
 use Carbon\Carbon;
@@ -19,19 +19,19 @@ class TeacherSessionController extends Controller
     public function index(Request $request): View
     {
         $teacher = $request->user();
-        $classes = SchoolClass::orderBy('name')->get();
+        $classes = Kelas::orderBy('nama')->get();
         $subjects = Subject::orderBy('name')->get();
 
         $selectedClassId = $request->query('class_id');
         $selectedSubjectId = $request->query('subject_id');
 
-        $selectedClass = $selectedClassId ? $classes->firstWhere('id', (int) $selectedClassId) : null;
+        $selectedClass = $selectedClassId ? $classes->firstWhere('id_kelas', (int) $selectedClassId) : null;
         $selectedSubject = $selectedSubjectId ? $subjects->firstWhere('id', (int) $selectedSubjectId) : null;
 
         $students = collect();
         if ($selectedClass) {
             $students = User::where('role', User::ROLE_SISWA)
-                ->whereHas('siswaProfile', fn ($q) => $q->where('classroom', $selectedClass->name))
+                ->whereHas('siswaProfile.kelas', fn ($q) => $q->where('nama', $selectedClass->nama))
                 ->orderBy('username')
                 ->get();
         }
@@ -51,8 +51,8 @@ class TeacherSessionController extends Controller
         if ($activeSession && $selectedClass) {
             $scans = Attendance::with('student')
                 ->whereDate('date', Carbon::today())
-                ->whereHas('student.siswaProfile', function ($query) use ($selectedClass) {
-                    $query->where('classroom', $selectedClass->name);
+                ->whereHas('student.siswaProfile.kelas', function ($query) use ($selectedClass) {
+                    $query->where('nama', $selectedClass->nama);
                 })
                 ->latest()
                 ->get();
@@ -75,11 +75,11 @@ class TeacherSessionController extends Controller
     public function start(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'class_id' => ['required', 'exists:school_classes,id'],
+            'class_id' => ['required', 'exists:school_classes,id_kelas'],
             'subject_id' => ['required', 'exists:subjects,id'],
         ]);
 
-        $class = SchoolClass::find($data['class_id']);
+        $class = Kelas::find($data['class_id']);
         $subject = Subject::find($data['subject_id']);
 
         $session = AttendanceSession::updateOrCreate(
@@ -174,7 +174,7 @@ class TeacherSessionController extends Controller
             'student_id' => ['required', 'exists:users,id'],
             'status' => ['required', 'in:hadir,izin,sakit,alpa,terlambat'],
             'note' => ['nullable', 'string'],
-            'class_id' => ['nullable', 'exists:school_classes,id'],
+            'class_id' => ['nullable', 'exists:school_classes,id_kelas'],
             'subject_id' => ['nullable', 'exists:subjects,id'],
         ]);
 
@@ -214,7 +214,7 @@ class TeacherSessionController extends Controller
         return response()->json([
             'code' => $session->code,
             'subject' => $session->subject?->name,
-            'class' => $session->class?->name,
+            'class' => $session->class?->nama,
             'time_slot' => $session->subject?->time_slot,
         ]);
     }
@@ -240,9 +240,9 @@ class TeacherSessionController extends Controller
 
         $scans = Attendance::with('student')
             ->whereDate('date', Carbon::today())
-            ->when($class?->name, function ($query, $className) {
-                $query->whereHas('student.siswaProfile', function ($q) use ($className) {
-                    $q->where('classroom', $className);
+            ->when($class?->nama, function ($query, $className) {
+                $query->whereHas('student.siswaProfile.kelas', function ($q) use ($className) {
+                    $q->where('nama', $className);
                 });
             })
             ->latest()
@@ -258,9 +258,9 @@ class TeacherSessionController extends Controller
         return response()->json(['data' => $scans]);
     }
 
-    protected function makeSessionCode(?SchoolClass $class, ?Subject $subject): string
+    protected function makeSessionCode(?Kelas $class, ?Subject $subject): string
     {
-        $classPart = strtoupper($class?->name ?? 'CLASS');
+        $classPart = strtoupper($class?->nama ?? 'CLASS');
         $subjectPart = strtoupper($subject?->code ?? $subject?->name ?? 'SUBJECT');
         $timeSlot = $subject?->time_slot ? strtoupper($subject->time_slot) : '';
         $random = Str::upper(Str::random(6));

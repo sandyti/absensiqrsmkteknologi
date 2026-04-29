@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Kelas;
 use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -21,7 +22,9 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register');
+        return view('auth.register', [
+            'classes' => Kelas::orderBy('nama')->get(),
+        ]);
     }
 
     /**
@@ -32,25 +35,25 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'nama' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
-            'identifier' => ['nullable', 'string', 'max:50'],
-            'classroom' => ['nullable', 'string', 'max:50'],
+            'nis' => ['required', 'string', 'max:50', 'unique:siswas,nis'],
+            'id_kelas' => ['nullable', 'exists:school_classes,id_kelas'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $user = DB::transaction(function () use ($validated, $request): User {
             $student = Siswa::create([
-                'name' => $validated['name'],
-                'identifier' => $validated['identifier'] ?? null,
-                'classroom' => $validated['classroom'] ?? null,
+                'nama' => $validated['nama'],
+                'nis' => $validated['nis'],
+                'id_kelas' => $validated['id_kelas'] ?? null,
             ]);
 
             return User::create([
                 'username' => $validated['username'],
                 'role' => User::ROLE_SISWA,
                 'password' => Hash::make($validated['password']),
-                'id_ref' => $student->id,
+                'id_ref' => $student->getKey(),
             ]);
         });
 

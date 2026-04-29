@@ -24,7 +24,7 @@
                     <select name="class_id" class="mt-1 w-full rounded border-gray-300 text-sm" onchange="this.form.submit()">
                         <option value="">Pilih Kelas</option>
                         @foreach ($classes as $class)
-                            <option value="{{ $class->id }}" @selected($selectedClassId == $class->id)>{{ $class->name }}</option>
+                            <option value="{{ $class->id_kelas }}" @selected($selectedClassId == $class->id_kelas)>{{ $class->nama }} - {{ $class->tingkat }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -101,7 +101,7 @@
                             <select name="student_id" id="student-select" class="mt-1 w-full rounded border-gray-300 text-sm" required>
                                 <option value="">Pilih siswa</option>
                                 @foreach ($students as $student)
-                                    <option value="{{ $student->id }}">{{ $student->name }} — {{ $student->classroom }}</option>
+                                    <option value="{{ $student->id }}">{{ $student->name }} — {{ $student->siswaProfile?->kelas?->nama ?? '-' }}</option>
                                 @endforeach
                             </select>
                         </div>

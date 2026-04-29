@@ -28,9 +28,10 @@ class StudentScanController extends Controller
         }
 
         $student = $request->user();
-        $className = $session->class?->name;
+        $className = $session->class?->nama;
+        $studentClassName = $student->siswaProfile?->kelas?->nama;
 
-        if ($className && $student->classroom !== $className) {
+        if ($className && $studentClassName !== $className) {
             return back()->withErrors(['code' => 'Kode sesi ini tidak sesuai dengan kelas Anda.']);
         }
 

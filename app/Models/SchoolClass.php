@@ -2,17 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class SchoolClass extends Model
+class SchoolClass extends Kelas
 {
-    use HasFactory;
-
-    protected $fillable = ['name'];
-
-    public function subjects()
-    {
-        return $this->hasMany(Subject::class, 'class_id');
-    }
+    //
 }

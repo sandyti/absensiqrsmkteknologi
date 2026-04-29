@@ -2,11 +2,11 @@
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
-        <!-- Name -->
+        <!-- Nama -->
         <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
-            <x-input-error :messages="$errors->get('name')" class="mt-2" />
+            <x-input-label for="nama" :value="__('Nama')" />
+            <x-text-input id="nama" class="block mt-1 w-full" type="text" name="nama" :value="old('nama')" required autofocus autocomplete="name" />
+            <x-input-error :messages="$errors->get('nama')" class="mt-2" />
         </div>
 
         <!-- Username -->
@@ -16,18 +16,23 @@
             <x-input-error :messages="$errors->get('username')" class="mt-2" />
         </div>
 
-        <!-- Identifier -->
+        <!-- NIS -->
         <div class="mt-4">
-            <x-input-label for="identifier" value="NIS/NIP (opsional)" />
-            <x-text-input id="identifier" class="block mt-1 w-full" type="text" name="identifier" :value="old('identifier')" autocomplete="identifier" />
-            <x-input-error :messages="$errors->get('identifier')" class="mt-2" />
+            <x-input-label for="nis" value="NIS" />
+            <x-text-input id="nis" class="block mt-1 w-full" type="text" name="nis" :value="old('nis')" required autocomplete="off" />
+            <x-input-error :messages="$errors->get('nis')" class="mt-2" />
         </div>
 
-        <!-- Classroom -->
+        <!-- Kelas -->
         <div class="mt-4">
-            <x-input-label for="classroom" value="Kelas (opsional)" />
-            <x-text-input id="classroom" class="block mt-1 w-full" type="text" name="classroom" :value="old('classroom')" autocomplete="organization" />
-            <x-input-error :messages="$errors->get('classroom')" class="mt-2" />
+            <x-input-label for="id_kelas" value="Kelas" />
+            <select id="id_kelas" name="id_kelas" class="block mt-1 w-full border-gray-300 rounded" required>
+                <option value="">Pilih Kelas</option>
+                @foreach ($classes as $class)
+                    <option value="{{ $class->id_kelas }}" @selected(old('id_kelas') == $class->id_kelas)>{{ $class->nama }} - {{ $class->tingkat }}</option>
+                @endforeach
+            </select>
+            <x-input-error :messages="$errors->get('id_kelas')" class="mt-2" />
         </div>
 
         <!-- Password -->

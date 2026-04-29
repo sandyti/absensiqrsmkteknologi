@@ -38,6 +38,6 @@ class AttendanceSession extends Model
 
     public function class()
     {
-        return $this->belongsTo(SchoolClass::class, 'class_id');
+        return $this->belongsTo(Kelas::class, 'class_id', 'id_kelas');
     }
 }

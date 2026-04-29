@@ -3,56 +3,51 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Kelas;
 use App\Models\Siswa;
-use App\Models\SchoolClass;
-use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class StudentController extends Controller
 {
     public function index(): View
     {
-        $students = User::where('role', User::ROLE_SISWA)
+        $students = User::with('siswaProfile.kelas')
+            ->where('role', User::ROLE_SISWA)
             ->orderBy('username')
             ->get();
 
-        $classes = SchoolClass::orderBy('name')->get();
+        $classes = Kelas::orderBy('nama')->get();
         return view('admin.students.index', compact('students', 'classes'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'nama' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
-            'identifier' => ['nullable', 'string', 'max:50'],
-            'classroom' => ['nullable', 'string', 'max:100'],
-            'class_id' => ['nullable', 'exists:school_classes,id'],
+            'nis' => ['required', 'string', 'max:50', 'unique:siswas,nis'],
+            'id_kelas' => ['nullable', 'exists:school_classes,id_kelas'],
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 
-        $className = $data['classroom'] ?? null;
-        if (! empty($data['class_id'])) {
-            $className = SchoolClass::find($data['class_id'])?->name;
-        }
-
-        DB::transaction(function () use ($data, $className): void {
+        DB::transaction(function () use ($data): void {
             $student = Siswa::create([
-                'name' => $data['name'],
-                'identifier' => $data['identifier'] ?? null,
-                'classroom' => $className,
+                'nama' => $data['nama'],
+                'nis' => $data['nis'],
+                'id_kelas' => $data['id_kelas'] ?? null,
             ]);
 
             User::create([
                 'username' => $data['username'],
                 'password' => Hash::make($data['password'] ?? 'password'),
                 'role' => User::ROLE_SISWA,
-                'id_ref' => $student->id,
+                'id_ref' => $student->getKey(),
             ]);
         });
 
@@ -63,7 +58,7 @@ class StudentController extends Controller
     {
         abort_unless($student->isSiswa(), 404);
 
-        $classes = SchoolClass::orderBy('name')->get();
+        $classes = Kelas::orderBy('nama')->get();
         return view('admin.students.edit', compact('student', 'classes'));
     }
 
@@ -72,25 +67,24 @@ class StudentController extends Controller
         abort_unless($student->isSiswa(), 404);
 
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'nama' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$student->id],
-            'identifier' => ['nullable', 'string', 'max:50'],
-            'classroom' => ['nullable', 'string', 'max:100'],
-            'class_id' => ['nullable', 'exists:school_classes,id'],
+            'nis' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('siswas', 'nis')->ignore($student->id_ref, 'id_siswa'),
+            ],
+            'id_kelas' => ['nullable', 'exists:school_classes,id_kelas'],
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 
-        $data['classroom'] = $data['classroom'] ?? null;
-        if (! empty($data['class_id'])) {
-            $data['classroom'] = SchoolClass::find($data['class_id'])?->name;
-        }
-
-        DB::transaction(function () use ($student, $data, $className): void {
+        DB::transaction(function () use ($student, $data): void {
             $detail = $student->siswaProfile ?: new Siswa();
             $detail->fill([
-                'name' => $data['name'],
-                'identifier' => $data['identifier'] ?? null,
-                'classroom' => $className,
+                'nama' => $data['nama'],
+                'nis' => $data['nis'],
+                'id_kelas' => $data['id_kelas'] ?? null,
             ])->save();
 
             $student->forceFill([
@@ -98,7 +92,7 @@ class StudentController extends Controller
                 'password' => ! empty($data['password']) ? Hash::make($data['password']) : $student->password,
             ])->save();
 
-            $student->forceFill(['id_ref' => $detail->id])->save();
+            $student->forceFill(['id_ref' => $detail->getKey()])->save();
         });
 
         return redirect()->route('students.index')->with('status', 'Data siswa diperbarui.');
@@ -108,7 +102,10 @@ class StudentController extends Controller
     {
         abort_unless($student->isSiswa(), 404);
 
-        $student->delete();
+        DB::transaction(function () use ($student): void {
+            $student->siswaProfile()?->delete();
+            $student->delete();
+        });
 
         return back()->with('status', 'Siswa dihapus.');
     }

@@ -56,7 +56,7 @@
                                     @csrf
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Nama Siswa</label>
-                                        <input name="name" class="mt-1 w-full rounded border-gray-300 text-sm" required>
+                                        <input name="nama" class="mt-1 w-full rounded border-gray-300 text-sm" required>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Username</label>
@@ -67,18 +67,17 @@
                                         <input name="password" type="text" class="mt-1 w-full rounded border-gray-300 text-sm" placeholder="password">
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">NIS/NISN</label>
-                                        <input name="identifier" class="mt-1 w-full rounded border-gray-300 text-sm">
+                                        <label class="block text-sm font-medium text-gray-700">NIS</label>
+                                        <input name="nis" class="mt-1 w-full rounded border-gray-300 text-sm">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Kelas</label>
-                                        <select name="class_id" class="mt-1 w-full rounded border-gray-300 text-sm">
+                                        <select name="id_kelas" class="mt-1 w-full rounded border-gray-300 text-sm">
                                             <option value="">Pilih kelas</option>
                                             @foreach ($classes as $class)
-                                                <option value="{{ $class->id }}">{{ $class->name }}</option>
+                                                <option value="{{ $class->id_kelas }}">{{ $class->nama }} - {{ $class->tingkat }}</option>
                                             @endforeach
                                         </select>
-                                        <input name="classroom" class="mt-2 w-full rounded border-gray-300 text-sm" placeholder="Atau ketik manual">
                                     </div>
                                     <div class="md:col-span-3">
                                         <button class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">Simpan Data</button>
@@ -98,13 +97,18 @@
                                             @forelse ($students as $student)
                                                 <tr>
                                                     <td class="px-4 py-2">
-                                                        <div class="font-semibold text-gray-800">{{ $student->name }}</div>
+                                                        <div class="font-semibold text-gray-800">{{ $student->nama }}</div>
                                                         <div class="text-xs text-gray-500">{{ $student->username }}</div>
-                                                        @if ($student->identifier)
-                                                            <div class="text-xs text-gray-500">ID: {{ $student->identifier }}</div>
+                                                        @if ($student->nis)
+                                                            <div class="text-xs text-gray-500">NIS: {{ $student->nis }}</div>
                                                         @endif
                                                     </td>
-                                                    <td class="px-4 py-2 text-gray-700">{{ $student->classroom ?? '-' }}</td>
+                                                    <td class="px-4 py-2 text-gray-700">
+                                                        {{ $student->siswaProfile?->kelas?->nama ?? '-' }}
+                                                        @if ($student->siswaProfile?->kelas?->tingkat)
+                                                            <div class="text-xs text-gray-500">{{ $student->siswaProfile->kelas->tingkat }}</div>
+                                                        @endif
+                                                    </td>
                                                     <td class="px-4 py-2">
                                                         <div class="flex items-center gap-3">
                                                             <a href="{{ route('students.edit', $student) }}" class="text-blue-600 hover:text-blue-700" title="Edit">
@@ -122,7 +126,7 @@
                                                 </tr>
                                             @empty
                                                 <tr>
-                                                    <td colspan="5" class="px-4 py-4 text-center text-gray-500">Belum ada data siswa.</td>
+                                                    <td colspan="3" class="px-4 py-4 text-center text-gray-500">Belum ada data siswa.</td>
                                                 </tr>
                                             @endforelse
                                         </tbody>

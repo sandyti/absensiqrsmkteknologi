@@ -9,14 +9,23 @@ class Siswa extends Model
 {
     use HasFactory;
 
+    protected $table = 'siswas';
+
+    protected $primaryKey = 'id_siswa';
+
     protected $fillable = [
-        'name',
-        'identifier',
-        'classroom',
+        'nama',
+        'nis',
+        'id_kelas',
     ];
 
     public function user()
     {
-        return $this->hasOne(User::class, 'id_ref');
+        return $this->hasOne(User::class, 'id_ref', 'id_siswa');
+    }
+
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class, 'id_kelas', 'id_kelas');
     }
 }

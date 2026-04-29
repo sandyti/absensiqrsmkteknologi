@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Guru;
+use App\Models\Kelas;
 use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -17,6 +18,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $kelas = Kelas::create([
+            'nama' => 'X-A',
+            'tingkat' => 'X',
+        ]);
+
         $admin = User::factory()->create([
             'username' => 'admin',
             'role' => User::ROLE_ADMIN,
@@ -43,15 +49,15 @@ class DatabaseSeeder extends Seeder
         $students = collect();
         foreach (range(1, 8) as $index) {
             $studentDetail = Siswa::create([
-                'name' => 'Siswa '.$index,
-                'identifier' => 'NIS'.str_pad((string) $index, 4, '0', STR_PAD_LEFT),
-                'classroom' => 'X-A',
+                'nama' => 'Siswa '.$index,
+                'nis' => 'NIS'.str_pad((string) $index, 4, '0', STR_PAD_LEFT),
+                'id_kelas' => $kelas->getKey(),
             ]);
 
             $students->push(User::factory()->create([
                 'username' => 'siswa'.$index,
                 'role' => User::ROLE_SISWA,
-                'id_ref' => $studentDetail->id,
+                'id_ref' => $studentDetail->getKey(),
             ]));
         }
 

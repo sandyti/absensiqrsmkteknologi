@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Guru;
 use App\Models\Siswa;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -47,12 +48,12 @@ class ProfileController extends Controller
         if ($user->isSiswa()) {
             $siswa = $user->siswaProfile ?: new Siswa();
             $siswa->fill([
-                'name' => $validated['name'],
-                'identifier' => $user->identifier,
-                'classroom' => $user->classroom,
+                'nama' => $validated['name'],
+                'nis' => $user->identifier,
+                'id_kelas' => $user->siswaProfile?->id_kelas,
             ])->save();
 
-            $user->forceFill(['id_ref' => $siswa->id])->save();
+            $user->forceFill(['id_ref' => $siswa->getKey()])->save();
         }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
@@ -71,7 +72,11 @@ class ProfileController extends Controller
 
         Auth::logout();
 
-        $user->delete();
+        DB::transaction(function () use ($user): void {
+            $user->guruProfile()?->delete();
+            $user->siswaProfile()?->delete();
+            $user->delete();
+        });
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

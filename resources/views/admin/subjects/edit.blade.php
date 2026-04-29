@@ -50,7 +50,7 @@
                         <select name="class_id" id="edit-class-select" class="mt-1 w-full rounded border-gray-300 text-sm">
                             <option value="">Pilih kelas</option>
                             @foreach ($classes as $class)
-                                <option value="{{ $class->id }}" data-classroom="{{ $class->name }}" @selected(old('class_id', $subject->class_id) == $class->id || $subject->classroom === $class->name)>{{ $class->name }}</option>
+                                <option value="{{ $class->id_kelas }}" data-classroom="{{ $class->nama }}" @selected(old('class_id', $subject->class_id) == $class->id_kelas || $subject->classroom === $class->nama)>{{ $class->nama }} - {{ $class->tingkat }}</option>
                             @endforeach
                         </select>
                         <input name="classroom" value="{{ old('classroom', $subject->classroom) }}" class="mt-2 w-full rounded border-gray-300 text-sm" placeholder="Atau ketik manual">
@@ -68,8 +68,8 @@
                         <label class="block text-sm font-medium text-gray-700">Siswa</label>
                         <select name="students[]" id="edit-students-select" multiple class="mt-1 w-full rounded border-gray-300 text-sm h-40">
                             @foreach ($students as $student)
-                                <option value="{{ $student->id }}" data-classroom="{{ $student->classroom ?? '' }}" @selected(in_array($student->id, old('students', $subject->students->pluck('id')->toArray())))>
-                                    {{ $student->name }} ({{ $student->classroom ?? '-' }})
+                                <option value="{{ $student->id }}" data-classroom="{{ $student->siswaProfile?->kelas?->nama ?? '' }}" @selected(in_array($student->id, old('students', $subject->students->pluck('id')->toArray())))>
+                                    {{ $student->name }} ({{ $student->siswaProfile?->kelas?->nama ?? '-' }})
                                 </option>
                             @endforeach
                         </select>

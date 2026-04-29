@@ -39,9 +39,9 @@
                         <div class="mt-1 grid grid-cols-2 gap-2 text-sm max-h-32 overflow-y-auto border rounded p-2">
                             @foreach ($classes as $class)
                                 <label class="flex items-center gap-2">
-                                    <input type="checkbox" name="class_ids[]" value="{{ $class->id }}" class="rounded border-gray-300"
-                                        @checked(in_array($class->name, $assignedClasses) || in_array($class->id, (array) old('class_ids', [])))>
-                                    <span>{{ $class->name }}</span>
+                                    <input type="checkbox" name="class_ids[]" value="{{ $class->id_kelas }}" class="rounded border-gray-300"
+                                        @checked(in_array($class->nama, $assignedClasses) || in_array($class->id_kelas, (array) old('class_ids', [])))>
+                                    <span>{{ $class->nama }} - {{ $class->tingkat }}</span>
                                 </label>
                             @endforeach
                         </div>

@@ -93,7 +93,7 @@ class User extends Authenticatable
         }
 
         if ($this->role === self::ROLE_SISWA) {
-            return (string) ($this->siswaProfile?->name ?? $this->username);
+            return (string) ($this->siswaProfile?->nama ?? $this->username);
         }
 
         return (string) $this->username;
@@ -111,7 +111,7 @@ class User extends Authenticatable
         }
 
         if ($this->role === self::ROLE_SISWA) {
-            return $this->siswaProfile?->identifier;
+            return $this->siswaProfile?->nis;
         }
 
         return null;
@@ -119,7 +119,7 @@ class User extends Authenticatable
 
     public function getClassroomAttribute(): ?string
     {
-        return $this->role === self::ROLE_SISWA ? $this->siswaProfile?->classroom : null;
+        return $this->role === self::ROLE_SISWA ? $this->siswaProfile?->kelas?->nama : null;
     }
 
     public function getTeachesClassAttribute(): ?string
@@ -144,7 +144,7 @@ class User extends Authenticatable
 
     public function siswaProfile()
     {
-        return $this->belongsTo(Siswa::class, 'id_ref');
+        return $this->belongsTo(Siswa::class, 'id_ref', 'id_siswa');
     }
 
     public function getEmailForPasswordReset(): string

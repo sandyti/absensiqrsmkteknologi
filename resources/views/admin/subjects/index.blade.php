@@ -89,7 +89,7 @@
                                         <select name="class_id" id="create-class-select" class="mt-1 w-full rounded border-gray-300 text-sm">
                                             <option value="">Pilih kelas</option>
                                             @foreach ($classes as $class)
-                                                <option value="{{ $class->id }}" data-classroom="{{ $class->name }}">{{ $class->name }}</option>
+                                                <option value="{{ $class->id_kelas }}" data-classroom="{{ $class->nama }}">{{ $class->nama }} - {{ $class->tingkat }}</option>
                                             @endforeach
                                         </select>
                                         <input name="classroom" class="mt-2 w-full rounded border-gray-300 text-sm" placeholder="Atau ketik manual">
@@ -107,7 +107,7 @@
                                         <label class="block text-sm font-medium text-gray-700">Siswa</label>
                                         <select name="students[]" id="create-students-select" multiple class="mt-1 w-full rounded border-gray-300 text-sm h-32">
                                             @foreach ($students as $student)
-                                                <option value="{{ $student->id }}" data-classroom="{{ $student->classroom ?? '' }}">{{ $student->name }} ({{ $student->classroom ?? '-' }})</option>
+                                                <option value="{{ $student->id }}" data-classroom="{{ $student->siswaProfile?->kelas?->nama ?? '' }}">{{ $student->name }} ({{ $student->siswaProfile?->kelas?->nama ?? '-' }})</option>
                                             @endforeach
                                         </select>
                                         <p class="text-xs text-gray-500 mt-1">Otomatis memilih siswa sesuai kelas yang dipilih. Tahan Ctrl/Cmd untuk pilih lebih dari satu.</p>
@@ -121,7 +121,8 @@
                                     <h5 class="text-sm font-semibold text-gray-700 mb-2">Tambah Kelas</h5>
                                     <form method="POST" action="{{ route('classes.store') }}" class="flex gap-3 items-center">
                                     @csrf
-                                    <input name="name" class="flex-1 rounded border-gray-300 text-sm" placeholder="Nama kelas (mis. X IPA 1)" required>
+                                    <input name="nama" class="flex-1 rounded border-gray-300 text-sm" placeholder="Nama kelas (mis. X IPA 1)" required>
+                                    <input name="tingkat" class="w-32 rounded border-gray-300 text-sm" placeholder="Tingkat (mis. X)" required>
                                     <button class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50">Tambah</button>
                                     </form>
                                 </div>

@@ -45,9 +45,9 @@
                                         <tr>
                                             <td class="px-4 py-2">
                                                 <div class="font-semibold text-gray-800">{{ $student->name }}</div>
-                                                <div class="text-gray-500 text-xs">{{ $student->identifier }}</div>
+                                                <div class="text-gray-500 text-xs">{{ $student->nis }}</div>
                                             </td>
-                                            <td class="px-4 py-2 text-gray-700">{{ $student->classroom ?? '-' }}</td>
+                                            <td class="px-4 py-2 text-gray-700">{{ $student->siswaProfile?->kelas?->nama ?? '-' }}</td>
                                             <td class="px-4 py-2">
                                                 <select name="statuses[{{ $student->id }}]" class="rounded border-gray-300 text-sm" required>
                                                     @foreach (['hadir' => 'Hadir', 'izin' => 'Izin', 'sakit' => 'Sakit', 'alpa' => 'Alpa', 'terlambat' => 'Terlambat'] as $value => $label)

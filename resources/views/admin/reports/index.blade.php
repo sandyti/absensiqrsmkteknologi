@@ -71,7 +71,7 @@
                                             <select name="class_id" class="mt-1 w-full rounded border-gray-300 text-sm">
                                                 <option value="">Semua</option>
                                                 @foreach ($classes as $class)
-                                                    <option value="{{ $class->id }}" @selected($filters['class_id'] == $class->id)>{{ $class->name }}</option>
+                                                    <option value="{{ $class->id_kelas }}" @selected($filters['class_id'] == $class->id_kelas)>{{ $class->nama }} - {{ $class->tingkat }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -154,7 +154,7 @@
                                                             <td class="px-4 py-2">{{ $record->date->translatedFormat('d F Y') }}</td>
                                                             <td class="px-4 py-2">
                                                                 <div class="font-semibold text-gray-800">{{ $record->student->name ?? '-' }}</div>
-                                                                <div class="text-xs text-gray-500">{{ $record->student->classroom ?? '-' }}</div>
+                                                                <div class="text-xs text-gray-500">{{ $record->student->siswaProfile?->kelas?->nama ?? '-' }}</div>
                                                             </td>
                                                             <td class="px-4 py-2 capitalize font-semibold">{{ $record->status }}</td>
                                                             <td class="px-4 py-2 text-gray-700">{{ $record->recorder->name ?? '-' }}</td>
@@ -230,7 +230,7 @@
                         <select name="class_id" class="mt-1 w-full rounded border-gray-300 text-sm">
                             <option value="">Semua</option>
                             @foreach ($classes as $class)
-                                <option value="{{ $class->id }}" @selected($filters['class_id'] == $class->id)>{{ $class->name }}</option>
+                                <option value="{{ $class->id_kelas }}" @selected($filters['class_id'] == $class->id_kelas)>{{ $class->nama }} - {{ $class->tingkat }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -264,7 +264,7 @@
                         @forelse ($records as $record)
                             <div class="border border-gray-200 rounded-md p-2">
                                 <div class="font-semibold">{{ $record->student->name ?? '-' }}</div>
-                                <div class="text-xs text-gray-500">{{ $record->student->classroom ?? '-' }} · {{ $record->date->translatedFormat('d F Y') }}</div>
+                                <div class="text-xs text-gray-500">{{ $record->student->siswaProfile?->kelas?->nama ?? '-' }} · {{ $record->date->translatedFormat('d F Y') }}</div>
                                 <div class="capitalize font-semibold mt-1">{{ $record->status }}</div>
                                 <div class="text-xs text-gray-500">Dicatat: {{ $record->recorder->name ?? '-' }}</div>
                                 @if($record->note)

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Guru;
-use App\Models\SchoolClass;
+use App\Models\Kelas;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +22,7 @@ class TeacherController extends Controller
             ->orderBy('username')
             ->get();
 
-        $classes = SchoolClass::orderBy('name')->get();
+        $classes = Kelas::orderBy('nama')->get();
         $subjects = Subject::orderBy('name')->get();
 
         return view('admin.teachers.index', compact('teachers', 'classes', 'subjects'));
@@ -35,7 +35,7 @@ class TeacherController extends Controller
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
             'identifier' => ['nullable', 'string', 'max:50'],
             'class_ids' => ['array'],
-            'class_ids.*' => ['exists:school_classes,id'],
+            'class_ids.*' => ['exists:school_classes,id_kelas'],
             'teaches_class' => ['nullable', 'string', 'max:200'],
             'subject_ids' => ['array'],
             'subject_ids.*' => ['exists:subjects,id'],
@@ -72,7 +72,7 @@ class TeacherController extends Controller
     {
         abort_unless($teacher->isGuru(), 404);
 
-        $classes = SchoolClass::orderBy('name')->get();
+        $classes = Kelas::orderBy('nama')->get();
         $subjects = Subject::orderBy('name')->get();
 
         return view('admin.teachers.edit', compact('teacher', 'classes', 'subjects'));
@@ -87,7 +87,7 @@ class TeacherController extends Controller
             'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$teacher->id],
             'identifier' => ['nullable', 'string', 'max:50'],
             'class_ids' => ['array'],
-            'class_ids.*' => ['exists:school_classes,id'],
+            'class_ids.*' => ['exists:school_classes,id_kelas'],
             'teaches_class' => ['nullable', 'string', 'max:200'],
             'subject_ids' => ['array'],
             'subject_ids.*' => ['exists:subjects,id'],
@@ -126,7 +126,10 @@ class TeacherController extends Controller
     {
         abort_unless($teacher->isGuru(), 404);
 
-        $teacher->delete();
+        DB::transaction(function () use ($teacher): void {
+            $teacher->guruProfile()?->delete();
+            $teacher->delete();
+        });
 
         return back()->with('status', 'Guru dihapus.');
     }
@@ -135,7 +138,7 @@ class TeacherController extends Controller
     {
         $selected = collect($request->input('class_ids', []))
             ->filter()
-            ->map(fn ($id) => SchoolClass::find($id)?->name)
+            ->map(fn ($id) => Kelas::find($id)?->nama)
             ->filter();
 
         $manual = collect(explode(',', (string) $request->input('teaches_class')))
