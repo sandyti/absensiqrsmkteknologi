@@ -39,11 +39,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:admin,guru')->group(function () {
         Route::get('/attendance/session', [TeacherSessionController::class, 'index'])->name('attendance.session');
         Route::post('/attendance/session/start', [TeacherSessionController::class, 'start'])->name('attendance.session.start');
-        Route::post('/attendance/session/pause', [TeacherSessionController::class, 'pause'])->name('attendance.session.pause');
-        Route::post('/attendance/session/resume', [TeacherSessionController::class, 'resume'])->name('attendance.session.resume');
         Route::post('/attendance/session/close', [TeacherSessionController::class, 'close'])->name('attendance.session.close');
         Route::post('/attendance/session/manual', [TeacherSessionController::class, 'markManual'])->name('attendance.session.manual');
-        Route::post('/attendance/session/refresh', [TeacherSessionController::class, 'refreshCode'])->name('attendance.session.refresh');
+        Route::post('/attendance/session/refresh', [TeacherSessionController::class, 'refreshToken'])->name('attendance.session.refresh');
         Route::get('/attendance/session/scans', [TeacherSessionController::class, 'scans'])->name('attendance.session.scans');
     });
 

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Guru;
+use App\Models\Jadwal;
 use App\Models\Kelas;
 use App\Models\Mapel;
 use App\Models\Siswa;
@@ -44,8 +45,17 @@ class DatabaseSeeder extends Seeder
 
         $guruDetail->user()->save($guru);
 
-        Mapel::create([
+        $mapel = Mapel::create([
             'nama_mapel' => 'Matematika',
+        ]);
+
+        Jadwal::create([
+            'id_kelas' => $kelas->getKey(),
+            'id_mapel' => $mapel->getKey(),
+            'id_guru' => $guruDetail->getKey(),
+            'hari' => 'Senin',
+            'jam_mulai' => '07:00:00',
+            'jam_selesai' => '08:30:00',
         ]);
 
         $students = collect();

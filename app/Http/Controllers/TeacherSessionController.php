@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
-use App\Models\AttendanceSession;
-use App\Models\Kelas;
-use App\Models\Mapel;
+use App\Models\Jadwal;
+use App\Models\SesiPresensi;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -18,54 +17,53 @@ class TeacherSessionController extends Controller
 {
     public function index(Request $request): View
     {
-        $teacher = $request->user();
-        $classes = Kelas::orderBy('nama')->get();
-        $subjects = Mapel::orderBy('nama_mapel')->get();
+        $jadwals = $this->jadwalQuery($request)
+            ->with(['kelas', 'mapel', 'guru'])
+            ->orderBy('hari')
+            ->orderBy('jam_mulai')
+            ->get();
 
-        $selectedClassId = $request->query('class_id');
-        $selectedSubjectId = $request->query('subject_id');
+        $selectedJadwalId = $request->query('jadwal_id');
+        $selectedJadwal = $selectedJadwalId
+            ? $jadwals->firstWhere('id_jadwal', (int) $selectedJadwalId)
+            : null;
 
-        $selectedClass = $selectedClassId ? $classes->firstWhere('id_kelas', (int) $selectedClassId) : null;
-        $selectedSubject = $selectedSubjectId ? $subjects->firstWhere('id_mapel', (int) $selectedSubjectId) : null;
+        $activeSession = $selectedJadwal
+            ? SesiPresensi::where('id_jadwal', $selectedJadwal->getKey())
+                ->where('status', 'open')
+                ->whereDate('tanggal', Carbon::today())
+                ->latest('id_sesi')
+                ->first()
+            : null;
 
         $students = collect();
-        if ($selectedClass) {
+        if ($selectedJadwal?->kelas) {
             $students = User::where('role', User::ROLE_SISWA)
-                ->whereHas('siswaProfile.kelas', fn ($q) => $q->where('nama', $selectedClass->nama))
+                ->whereHas('siswaProfile', function ($query) use ($selectedJadwal) {
+                    $query->where('id_kelas', $selectedJadwal->id_kelas);
+                })
                 ->orderBy('username')
                 ->get();
         }
 
-        $activeSession = $selectedClassId && $selectedSubjectId
-            ? AttendanceSession::where('teacher_id', $teacher->id)
-                ->whereIn('status', ['active', 'paused'])
-                ->where('class_id', $selectedClassId)
-                ->where('subject_id', $selectedSubjectId)
-                ->latest()
-                ->first()
-            : null;
-
         $showQr = $request->boolean('show_qr');
 
         $scans = collect();
-        if ($activeSession && $selectedClass) {
+        if ($activeSession && $selectedJadwal?->kelas) {
             $scans = Attendance::with('student')
                 ->whereDate('date', Carbon::today())
-                ->whereHas('student.siswaProfile.kelas', function ($query) use ($selectedClass) {
-                    $query->where('nama', $selectedClass->nama);
+                ->whereHas('student.siswaProfile', function ($query) use ($selectedJadwal) {
+                    $query->where('id_kelas', $selectedJadwal->id_kelas);
                 })
                 ->latest()
                 ->get();
         }
 
         return view('attendance.session', compact(
-            'classes',
-            'subjects',
+            'jadwals',
             'students',
-            'selectedClassId',
-            'selectedSubjectId',
-            'selectedClass',
-            'selectedSubject',
+            'selectedJadwalId',
+            'selectedJadwal',
             'activeSession',
             'scans',
             'showQr'
@@ -75,112 +73,68 @@ class TeacherSessionController extends Controller
     public function start(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'class_id' => ['required', 'exists:school_classes,id_kelas'],
-            'subject_id' => ['required', 'exists:subjects,id_mapel'],
+            'jadwal_id' => ['required', 'exists:jadwals,id_jadwal'],
         ]);
 
-        $class = Kelas::find($data['class_id']);
-        $subject = Mapel::find($data['subject_id']);
+        $jadwal = $this->accessibleJadwal($request, (int) $data['jadwal_id']);
 
-        $session = AttendanceSession::updateOrCreate(
+        $session = SesiPresensi::updateOrCreate(
             [
-                'teacher_id' => $request->user()->id,
-                'status' => 'active',
+                'id_jadwal' => $jadwal->getKey(),
+                'tanggal' => Carbon::today()->toDateString(),
             ],
             [
-                'class_id' => $data['class_id'],
-                'subject_id' => $data['subject_id'],
-                'started_at' => now(),
-                'paused_at' => null,
-                'ended_at' => null,
-                'code' => $this->makeSessionCode($class, $subject),
+                'token' => $this->makeToken($jadwal),
+                'status' => 'open',
             ]
         );
 
-        $session->save();
-
         return redirect()->route('attendance.session', [
-            'class_id' => $data['class_id'],
-            'subject_id' => $data['subject_id'],
+            'jadwal_id' => $jadwal->getKey(),
             'show_qr' => 1,
-        ])->with('status', 'Sesi absensi dimulai / diperbarui.');
-    }
-
-    public function pause(Request $request): RedirectResponse
-    {
-        $session = AttendanceSession::where('teacher_id', $request->user()->id)
-            ->where('status', 'active')
-            ->latest()
-            ->first();
-
-        if ($session) {
-            $session->update([
-                'status' => 'paused',
-                'paused_at' => now(),
-            ]);
-        }
-
-        return redirect()->route('attendance.session', [
-            'class_id' => $session?->class_id,
-            'subject_id' => $session?->subject_id,
-            'show_qr' => 1,
-        ])->with('status', 'Sesi dijeda.');
-    }
-
-    public function resume(Request $request): RedirectResponse
-    {
-        $session = AttendanceSession::where('teacher_id', $request->user()->id)
-            ->where('status', 'paused')
-            ->latest()
-            ->first();
-
-        if ($session) {
-            $session->update([
-                'status' => 'active',
-                'paused_at' => null,
-            ]);
-        }
-
-        return redirect()->route('attendance.session', [
-            'class_id' => $session?->class_id,
-            'subject_id' => $session?->subject_id,
-            'show_qr' => 1,
-        ])->with('status', 'Sesi dilanjutkan.');
+        ])->with('status', 'Sesi presensi dimulai.');
     }
 
     public function close(Request $request): RedirectResponse
     {
-        $session = AttendanceSession::where('teacher_id', $request->user()->id)
-            ->whereIn('status', ['active', 'paused'])
-            ->latest()
+        $data = $request->validate([
+            'jadwal_id' => ['required', 'exists:jadwals,id_jadwal'],
+        ]);
+
+        $session = SesiPresensi::where('id_jadwal', $data['jadwal_id'])
+            ->where('status', 'open')
+            ->whereDate('tanggal', Carbon::today())
+            ->latest('id_sesi')
             ->first();
 
         if ($session) {
-            $session->update([
-                'status' => 'closed',
-                'ended_at' => now(),
-            ]);
+            $session->update(['status' => 'closed']);
         }
 
         return redirect()->route('attendance.session', [
-            'class_id' => $session?->class_id,
-            'subject_id' => $session?->subject_id,
+            'jadwal_id' => $data['jadwal_id'],
         ])->with('status', 'Sesi ditutup.');
     }
 
     public function markManual(Request $request): RedirectResponse
     {
         $data = $request->validate([
+            'jadwal_id' => ['required', 'exists:jadwals,id_jadwal'],
             'student_id' => ['required', 'exists:users,id'],
             'status' => ['required', 'in:hadir,izin,sakit,alpa,terlambat'],
             'note' => ['nullable', 'string'],
-            'class_id' => ['nullable', 'exists:school_classes,id_kelas'],
-            'subject_id' => ['nullable', 'exists:subjects,id_mapel'],
         ]);
+
+        $jadwal = $this->accessibleJadwal($request, (int) $data['jadwal_id']);
+        $student = User::where('role', User::ROLE_SISWA)->findOrFail($data['student_id']);
+
+        if ((int) $student->siswaProfile?->id_kelas !== (int) $jadwal->id_kelas) {
+            return back()->withErrors(['student_id' => 'Siswa tidak sesuai dengan jadwal kelas.']);
+        }
 
         Attendance::updateOrCreate(
             [
-                'student_id' => $data['student_id'],
+                'student_id' => $student->id,
                 'date' => Carbon::today()->toDateString(),
             ],
             [
@@ -191,57 +145,59 @@ class TeacherSessionController extends Controller
         );
 
         return redirect()->route('attendance.session', [
-            'class_id' => $data['class_id'],
-            'subject_id' => $data['subject_id'],
-        ])->with('status', 'Absensi diperbarui untuk siswa.');
+            'jadwal_id' => $jadwal->getKey(),
+        ])->with('status', 'Absensi manual diperbarui.');
     }
 
-    public function refreshCode(Request $request): JsonResponse
+    public function refreshToken(Request $request): JsonResponse
     {
-        $session = AttendanceSession::where('teacher_id', $request->user()->id)
-            ->where('status', 'active')
-            ->latest()
+        $data = $request->validate([
+            'jadwal_id' => ['required', 'exists:jadwals,id_jadwal'],
+        ]);
+
+        $jadwal = $this->accessibleJadwal($request, (int) $data['jadwal_id']);
+
+        $session = SesiPresensi::where('id_jadwal', $jadwal->getKey())
+            ->where('status', 'open')
+            ->whereDate('tanggal', Carbon::today())
+            ->latest('id_sesi')
             ->first();
 
         if (! $session) {
             return response()->json(['message' => 'Sesi tidak ditemukan'], 422);
         }
 
-        $session->update(['code' => $this->makeSessionCode($session->class, $session->subject)]);
-        $session->load(['subject', 'class']);
+        $session->update([
+            'token' => $this->makeToken($jadwal),
+        ]);
 
         return response()->json([
-            'code' => $session->code,
-            'subject' => $session->subject?->nama_mapel,
-            'class' => $session->class?->nama,
+            'token' => $session->token,
         ]);
     }
 
     public function scans(Request $request): JsonResponse
     {
-        $teacher = $request->user();
-        $classId = $request->query('class_id');
-        $subjectId = $request->query('subject_id');
+        $data = $request->validate([
+            'jadwal_id' => ['required', 'exists:jadwals,id_jadwal'],
+        ]);
 
-        $session = AttendanceSession::where('teacher_id', $teacher->id)
-            ->whereIn('status', ['active', 'paused'])
-            ->when($classId, fn ($q) => $q->where('class_id', $classId))
-            ->when($subjectId, fn ($q) => $q->where('subject_id', $subjectId))
-            ->latest()
+        $jadwal = $this->accessibleJadwal($request, (int) $data['jadwal_id']);
+
+        $session = SesiPresensi::where('id_jadwal', $jadwal->getKey())
+            ->where('status', 'open')
+            ->whereDate('tanggal', Carbon::today())
+            ->latest('id_sesi')
             ->first();
 
         if (! $session) {
             return response()->json(['data' => []]);
         }
 
-        $class = $session->class;
-
         $scans = Attendance::with('student')
             ->whereDate('date', Carbon::today())
-            ->when($class?->nama, function ($query, $className) {
-                $query->whereHas('student.siswaProfile.kelas', function ($q) use ($className) {
-                    $q->where('nama', $className);
-                });
+            ->whereHas('student.siswaProfile', function ($query) use ($jadwal) {
+                $query->where('id_kelas', $jadwal->id_kelas);
             })
             ->latest()
             ->get()
@@ -256,12 +212,27 @@ class TeacherSessionController extends Controller
         return response()->json(['data' => $scans]);
     }
 
-    protected function makeSessionCode(?Kelas $class, ?Mapel $subject): string
+    protected function accessibleJadwal(Request $request, int $jadwalId): Jadwal
     {
-        $classPart = strtoupper($class?->nama ?? 'CLASS');
-        $subjectPart = strtoupper($subject?->nama_mapel ?? 'MAPEL');
-        $random = Str::upper(Str::random(6));
+        return $this->jadwalQuery($request)
+            ->whereKey($jadwalId)
+            ->firstOrFail();
+    }
 
-        return implode('|', array_filter([$classPart, $subjectPart, $random]));
+    protected function jadwalQuery(Request $request)
+    {
+        return Jadwal::query()
+            ->when($request->user()->isGuru(), function ($query) use ($request) {
+                $query->where('id_guru', $request->user()->id_ref);
+            });
+    }
+
+    protected function makeToken(Jadwal $jadwal): string
+    {
+        return implode('-', [
+            'JADWAL',
+            $jadwal->getKey(),
+            Str::upper(Str::random(8)),
+        ]);
     }
 }

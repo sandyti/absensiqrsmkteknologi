@@ -20,78 +20,60 @@
 
             <form method="GET" class="space-y-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Pilih Kelas</label>
-                    <select name="class_id" class="mt-1 w-full rounded border-gray-300 text-sm" onchange="this.form.submit()">
-                        <option value="">Pilih Kelas</option>
-                        @foreach ($classes as $class)
-                            <option value="{{ $class->id_kelas }}" @selected($selectedClassId == $class->id_kelas)>{{ $class->nama }} - {{ $class->tingkat }}</option>
+                    <label class="block text-sm font-medium text-gray-700">Pilih Jadwal</label>
+                    <select name="jadwal_id" class="mt-1 w-full rounded border-gray-300 text-sm" onchange="this.form.submit()">
+                        <option value="">Pilih Jadwal</option>
+                        @foreach ($jadwals as $jadwal)
+                            <option value="{{ $jadwal->id_jadwal }}" @selected($selectedJadwalId == $jadwal->id_jadwal)>
+                                {{ $jadwal->kelas?->nama ?? '-' }} | {{ $jadwal->mapel?->nama_mapel ?? '-' }} | {{ $jadwal->guru?->nama ?? '-' }} | {{ $jadwal->hari }} {{ $jadwal->jam_mulai }}-{{ $jadwal->jam_selesai }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Pilih Mapel</label>
-                    <select name="subject_id" class="mt-1 w-full rounded border-gray-300 text-sm" onchange="this.form.submit()">
-                        <option value="">Pilih Mapel</option>
-                        @foreach ($subjects as $subject)
-                            <option value="{{ $subject->id_mapel }}" @selected($selectedSubjectId == $subject->id_mapel)>{{ $subject->nama_mapel }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <p class="text-xs text-gray-500">Daftar siswa diambil otomatis berdasarkan kelas yang dipilih.</p>
-                </div>
+                @if ($selectedJadwal)
+                    <div class="rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 space-y-1">
+                        <div><span class="font-semibold">Kelas:</span> {{ $selectedJadwal->kelas?->nama ?? '-' }} {{ $selectedJadwal->kelas?->tingkat ? '('.$selectedJadwal->kelas->tingkat.')' : '' }}</div>
+                        <div><span class="font-semibold">Mapel:</span> {{ $selectedJadwal->mapel?->nama_mapel ?? '-' }}</div>
+                        <div><span class="font-semibold">Guru:</span> {{ $selectedJadwal->guru?->nama ?? '-' }}</div>
+                        <div><span class="font-semibold">Hari:</span> {{ $selectedJadwal->hari }}</div>
+                        <div><span class="font-semibold">Jam:</span> {{ $selectedJadwal->jam_mulai }} - {{ $selectedJadwal->jam_selesai }}</div>
+                    </div>
+                @endif
             </form>
 
             <div class="border border-gray-300 rounded-md p-4 text-center">
                 @if ($showQr && $activeSession)
                     <div id="qrcode" class="flex justify-center"></div>
-                    <p class="mt-2 text-sm text-gray-600" id="code-label">Kode: {{ $activeSession->code }}</p>
+                    <p class="mt-2 text-sm text-gray-600" id="token-label">Token: {{ $activeSession->token }}</p>
                     <p class="text-xs text-gray-500">Status: {{ ucfirst($activeSession->status) }}</p>
                 @else
-                    <p class="text-sm text-gray-600">Pilih kelas dan mapel kemudian tekan Generate untuk memulai sesi.</p>
+                    <p class="text-sm text-gray-600">Pilih jadwal lalu tekan Generate untuk membuat sesi presensi.</p>
                 @endif
             </div>
 
             <div class="grid grid-cols-2 gap-2">
                 <form method="POST" action="{{ route('attendance.session.start') }}">
                     @csrf
-                    <input type="hidden" name="class_id" value="{{ $selectedClassId }}">
-                    <input type="hidden" name="subject_id" value="{{ $selectedSubjectId }}">
-                    <button class="w-full border border-gray-400 rounded-md py-2 text-center font-semibold text-gray-800 hover:bg-gray-50" {{ !$selectedClassId || !$selectedSubjectId ? 'disabled' : '' }}>
+                    <input type="hidden" name="jadwal_id" value="{{ $selectedJadwalId }}">
+                    <button class="w-full border border-gray-400 rounded-md py-2 text-center font-semibold text-gray-800 hover:bg-gray-50" {{ !$selectedJadwalId ? 'disabled' : '' }}>
                         Generate
                     </button>
                 </form>
-                @if ($showQr && $activeSession)
-                    @if ($activeSession->status === 'active')
-                        <form method="POST" action="{{ route('attendance.session.pause') }}">
-                            @csrf
-                            <button class="w-full border border-gray-400 rounded-md py-2 text-center font-semibold text-gray-800 hover:bg-gray-50">Pause</button>
-                        </form>
-                    @else
-                        <form method="POST" action="{{ route('attendance.session.resume') }}">
-                            @csrf
-                            <button class="w-full border border-gray-400 rounded-md py-2 text-center font-semibold text-gray-800 hover:bg-gray-50">Lanjutkan</button>
-                        </form>
-                    @endif
-                @elseif ($activeSession)
-                    <button class="w-full border border-gray-200 rounded-md py-2 text-center font-semibold text-gray-400" disabled>Pause</button>
-                @endif
+                <form method="POST" action="{{ route('attendance.session.close') }}">
+                    @csrf
+                    <input type="hidden" name="jadwal_id" value="{{ $selectedJadwalId }}">
+                    <button class="w-full border border-gray-400 rounded-md py-2 text-center font-semibold text-gray-800 hover:bg-gray-50" {{ !$selectedJadwalId ? 'disabled' : '' }}>
+                        Tutup
+                    </button>
+                </form>
             </div>
 
-            <form method="POST" action="{{ route('attendance.session.close') }}">
-                @csrf
-                <button class="w-full border border-gray-400 rounded-md py-2 text-center font-semibold text-gray-800 hover:bg-gray-50">
-                    TUTUP SESI
-                </button>
-            </form>
-
-            @if ($selectedClassId)
+            @if ($selectedJadwal)
                 <div class="border border-gray-200 rounded-md p-3 space-y-2">
                     <h4 class="font-semibold text-gray-800 text-sm">Input Manual (terlambat/izin/sakit)</h4>
                     <form method="POST" action="{{ route('attendance.session.manual') }}" class="space-y-2">
                         @csrf
-                        <input type="hidden" name="class_id" value="{{ $selectedClassId }}">
-                        <input type="hidden" name="subject_id" value="{{ $selectedSubjectId }}">
+                        <input type="hidden" name="jadwal_id" value="{{ $selectedJadwalId }}">
                         <div>
                             <label class="block text-sm text-gray-700">Pilih Siswa</label>
                             <select name="student_id" id="student-select" class="mt-1 w-full rounded border-gray-300 text-sm" required>
@@ -179,13 +161,13 @@
     @push('scripts')
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
         <script>
-            const initialCode = @json($activeSession->code ?? null);
+            const initialToken = @json($activeSession->token ?? null);
             const refreshUrl = "{{ route('attendance.session.refresh') }}";
-            const scanUrl = "{{ route('attendance.session.scans', ['class_id' => $selectedClassId, 'subject_id' => $selectedSubjectId]) }}";
+            const scanUrl = "{{ route('attendance.session.scans', ['jadwal_id' => $selectedJadwalId]) }}";
             const csrf = "{{ csrf_token() }}";
             let qr;
 
-            function renderQRCode(code) {
+            function renderQRCode(token) {
                 if (!qr) {
                     qr = new QRCode(document.getElementById('qrcode'), {
                         width: 200,
@@ -193,11 +175,11 @@
                     });
                 }
                 qr.clear();
-                qr.makeCode(code);
-                document.getElementById('code-label').textContent = 'Kode: ' + code;
+                qr.makeCode(token);
+                document.getElementById('token-label').textContent = 'Token: ' + token;
             }
 
-            async function refreshCode() {
+            async function refreshToken() {
                 try {
                     const response = await fetch(refreshUrl, {
                         method: 'POST',
@@ -206,20 +188,20 @@
                             'X-CSRF-TOKEN': csrf,
                             'Accept': 'application/json',
                         },
-                        body: JSON.stringify({}),
+                        body: JSON.stringify({ jadwal_id: {{ (int) $selectedJadwalId }} }),
                     });
                     if (response.ok) {
                         const data = await response.json();
-                        renderQRCode(data.code);
+                        renderQRCode(data.token);
                     }
                 } catch (error) {
-                    console.error('Gagal memperbarui kode QR', error);
+                    console.error('Gagal memperbarui token QR', error);
                 }
             }
 
-            if (initialCode) {
-                renderQRCode(initialCode);
-                setInterval(refreshCode, 15000);
+            if (initialToken) {
+                renderQRCode(initialToken);
+                setInterval(refreshToken, 15000);
             }
 
             const scanIntervalMs = 5000;

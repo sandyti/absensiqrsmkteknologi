@@ -41,7 +41,7 @@
                 </div>
                 <form id="confirm-form" method="POST" action="{{ route('attendance.scan.confirm') }}" class="space-y-2">
                     @csrf
-                    <input type="hidden" name="code" id="code-field">
+                    <input type="hidden" name="token" id="token-field">
                     <button id="confirm-btn" class="w-full border border-gray-400 rounded-md py-2 text-center font-semibold text-gray-800 hover:bg-gray-50" disabled>
                         Konfirmasi
                     </button>
@@ -58,7 +58,7 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
         const statusText = document.getElementById('qr-status');
-        const codeField = document.getElementById('code-field');
+        const tokenField = document.getElementById('token-field');
         const confirmBtn = document.getElementById('confirm-btn');
         const confirmForm = document.getElementById('confirm-form');
         const toggleCamera = document.getElementById('toggle-camera');
@@ -83,8 +83,8 @@
                     qrbox: 250,
                 },
                 qrCodeMessage => {
-                    codeField.value = qrCodeMessage;
-                    statusText.textContent = 'Kode ditemukan. Tekan konfirmasi.';
+                    tokenField.value = qrCodeMessage;
+                    statusText.textContent = 'Token ditemukan. Tekan konfirmasi.';
                     confirmBtn.disabled = false;
                     html5QrCode.stop().catch(() => {});
                 },
@@ -129,7 +129,7 @@
         });
 
         confirmForm?.addEventListener('submit', (event) => {
-            if (!codeField.value) {
+            if (!tokenField.value) {
                 event.preventDefault();
                 statusText.textContent = 'Scan QR terlebih dahulu sebelum konfirmasi.';
                 alert('Scan QR terlebih dahulu sebelum konfirmasi.');

@@ -16,4 +16,9 @@ class Mapel extends Model
     protected $fillable = [
         'nama_mapel',
     ];
+
+    public function jadwals()
+    {
+        return $this->hasMany(Jadwal::class, 'id_mapel', 'id_mapel');
+    }
 }
