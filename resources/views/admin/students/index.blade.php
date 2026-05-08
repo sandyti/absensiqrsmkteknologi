@@ -71,8 +71,13 @@
                                         <input name="nis" class="mt-1 w-full rounded border-gray-300 text-sm">
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Kelas</label>
-                                        <select name="id_kelas" class="mt-1 w-full rounded border-gray-300 text-sm">
+                                        <div class="flex items-center justify-between">
+                                            <label class="block text-sm font-medium text-gray-700">Kelas</label>
+                                            <button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'create-class-modal')" class="text-xs text-blue-600 hover:text-blue-700 font-semibold">
+                                                + Tambah Kelas
+                                            </button>
+                                        </div>
+                                        <select id="id_kelas" name="id_kelas" class="mt-1 w-full rounded border-gray-300 text-sm">
                                             <option value="">Pilih kelas</option>
                                             @foreach ($classes as $class)
                                                 <option value="{{ $class->id_kelas }}">{{ $class->nama }} - {{ $class->tingkat }}</option>
@@ -83,6 +88,25 @@
                                         <button class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">Simpan Data</button>
                                     </div>
                                 </form>
+
+                                <x-modal name="create-class-modal" :show="$errors->any()" focusable maxWidth="md">
+                                    <form method="POST" action="{{ route('classes.store') }}" class="p-6 space-y-4">
+                                        @csrf
+                                        <h5 class="text-base font-semibold text-gray-800">Tambah Kelas</h5>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Nama Kelas</label>
+                                            <input name="nama" class="mt-1 w-full rounded border-gray-300 text-sm" placeholder="Contoh: RPL A" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Tingkat</label>
+                                            <input name="tingkat" class="mt-1 w-full rounded border-gray-300 text-sm" placeholder="Contoh: X / XI / XII" required>
+                                        </div>
+                                        <div class="flex justify-end gap-2">
+                                            <button type="button" x-on:click="$dispatch('close-modal', 'create-class-modal')" class="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50">Batal</button>
+                                            <button class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">Simpan Kelas</button>
+                                        </div>
+                                    </form>
+                                </x-modal>
 
                                 <div class="overflow-x-auto">
                                     <table class="min-w-full divide-y divide-gray-200 text-sm">
@@ -141,5 +165,19 @@
     </div>
 @push('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+@endpush
+@push('scripts')
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(function () {
+            $('#id_kelas').select2({
+                width: '100%',
+                placeholder: 'Pilih kelas',
+                allowClear: true
+            });
+        });
+    </script>
 @endpush
 </x-app-layout>

@@ -41,7 +41,7 @@ class AuthenticatedSessionController extends Controller
 
         $redirects = [
             'admin' => route('dashboard', absolute: false),
-            'guru' => route('attendance.session', absolute: false),
+            'guru' => route('dashboard', absolute: false),
             'siswa' => route('attendance.me', absolute: false),
         ];
 

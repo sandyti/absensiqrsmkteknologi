@@ -46,10 +46,30 @@
                                 </button>
                             </div>
 
-                            <form id="createForm" method="POST" action="{{ route('subjects.store') }}" class="flex gap-3 items-center bg-gray-50 p-4 rounded-md border border-dashed border-gray-300 hidden">
+                            <form id="createForm" method="POST" action="{{ route('subjects.store') }}" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end bg-gray-50 p-4 rounded-md border border-dashed border-gray-300 hidden">
                                 @csrf
-                                <input name="nama_mapel" class="flex-1 rounded border-gray-300 text-sm" placeholder="Nama mapel" required>
-                                <button class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">Simpan</button>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Nama Mapel</label>
+                                    <input name="nama_mapel" class="mt-1 w-full rounded border-gray-300 text-sm" placeholder="Nama mapel" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Kelas</label>
+                                    <div class="mt-1 max-h-32 overflow-y-auto rounded border border-gray-300 bg-white p-2 space-y-2">
+                                        @foreach ($classes as $class)
+                                            <label class="flex items-center gap-2 text-sm text-gray-700">
+                                                <input type="checkbox" name="id_kelas[]" value="{{ $class->id_kelas }}" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                                <span>{{ $class->nama }} - {{ $class->tingkat }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Jam Pelajaran</label>
+                                    <input name="jam_pelajaran" class="mt-1 w-full rounded border-gray-300 text-sm" placeholder="Contoh: 07:00 - 08:30">
+                                </div>
+                                <div class="md:col-span-3">
+                                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">Simpan</button>
+                                </div>
                             </form>
 
                             <div class="overflow-x-auto">
@@ -57,6 +77,8 @@
                                     <thead class="bg-gray-50">
                                         <tr>
                                             <th class="px-4 py-2 text-left font-semibold text-gray-700">Nama Mapel</th>
+                                            <th class="px-4 py-2 text-left font-semibold text-gray-700">Kelas</th>
+                                            <th class="px-4 py-2 text-left font-semibold text-gray-700">Jam Pelajaran</th>
                                             <th class="px-4 py-2 text-left font-semibold text-gray-700">Aksi</th>
                                         </tr>
                                     </thead>
@@ -64,6 +86,14 @@
                                         @forelse ($subjects as $subject)
                                             <tr>
                                                 <td class="px-4 py-2">{{ $subject->nama_mapel }}</td>
+                                                <td class="px-4 py-2">
+                                                    @if ($subject->kelas->isNotEmpty())
+                                                        {{ $subject->kelas->map(fn ($class) => $class->nama.' - '.$class->tingkat)->implode(', ') }}
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                                <td class="px-4 py-2">{{ $subject->jam_pelajaran ?? '-' }}</td>
                                                 <td class="px-4 py-2">
                                                     <div class="flex items-center gap-3">
                                                         <a href="{{ route('subjects.edit', $subject) }}" class="text-blue-600 hover:text-blue-700">Edit</a>
@@ -75,9 +105,9 @@
                                                     </div>
                                                 </td>
                                             </tr>
-                                        @empty
+                                            @empty
                                             <tr>
-                                                <td colspan="2" class="px-4 py-4 text-center text-gray-500">Belum ada data mapel.</td>
+                                                <td colspan="4" class="px-4 py-4 text-center text-gray-500">Belum ada data mapel.</td>
                                             </tr>
                                         @endforelse
                                     </tbody>

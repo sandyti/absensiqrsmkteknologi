@@ -21,15 +21,19 @@
                             </div>
                         </div>
                         <nav class="text-sm">
+                            @if (auth()->user()->role !== 'guru')
                             <a href="{{ route('dashboard') }}" class="block px-4 py-3 hover:bg-gray-100">Home</a>
                             <a href="{{ route('teachers.index') }}" class="block px-4 py-3 hover:bg-gray-100">Kelola Data Guru</a>
                             <a href="{{ route('students.index') }}" class="block px-4 py-3 hover:bg-gray-100">Kelola Data Siswa</a>
                             <a href="{{ route('subjects.index') }}" class="block px-4 py-3 hover:bg-gray-100">Kelola Data Mapel</a>
+                            @endif
                             <a href="{{ route('reports.index') }}" class="block px-4 py-3 bg-gray-200 font-semibold text-gray-800">Rekap Absensi</a>
+                            @if (auth()->user()->role !== 'guru')
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit" class="w-full text-left px-4 py-3 hover:bg-gray-100">Logout</button>
                             </form>
+                            @endif
                         </nav>
                     </aside>
 

@@ -49,7 +49,9 @@ class DatabaseSeeder extends Seeder
 
         $mapel = Mapel::create([
             'nama_mapel' => 'Matematika',
+            'jam_pelajaran' => '07:00 - 08:30',
         ]);
+        $mapel->kelas()->sync([$kelas->getKey()]);
 
         $jadwal = Jadwal::create([
             'id_kelas' => $kelas->getKey(),

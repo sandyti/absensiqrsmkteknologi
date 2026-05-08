@@ -15,7 +15,13 @@ class Mapel extends Model
 
     protected $fillable = [
         'nama_mapel',
+        'jam_pelajaran',
     ];
+
+    public function kelas()
+    {
+        return $this->belongsToMany(Kelas::class, 'kelas_subject', 'id_mapel', 'id_kelas');
+    }
 
     public function jadwals()
     {
