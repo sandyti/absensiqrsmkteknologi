@@ -23,8 +23,7 @@ class SubjectController extends Controller
     {
         $data = $request->validate([
             'nama_mapel' => ['required', 'string', 'max:255'],
-            'id_kelas' => ['nullable', 'array'],
-            'id_kelas.*' => ['exists:kelas,id_kelas'],
+            'id_kelas' => ['required', 'exists:kelas,id_kelas'],
             'jam_pelajaran' => ['nullable', 'string', 'max:100'],
         ]);
 
@@ -32,7 +31,7 @@ class SubjectController extends Controller
             'nama_mapel' => $data['nama_mapel'],
             'jam_pelajaran' => $data['jam_pelajaran'] ?? null,
         ]);
-        $subject->kelas()->sync($data['id_kelas'] ?? []);
+        $subject->kelas()->sync([$data['id_kelas']]);
 
         return back()->with('status', 'Mapel berhasil ditambahkan.');
     }

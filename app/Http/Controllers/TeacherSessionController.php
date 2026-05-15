@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Jadwal;
+use App\Models\Mapel;
 use App\Models\Presensi;
 use App\Models\SesiPresensi;
 use App\Models\Siswa;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +19,8 @@ class TeacherSessionController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->ensureGeneratedSchedules($request);
+
         $jadwals = $this->jadwalQuery($request)
             ->with(['kelas', 'mapel', 'guru'])
             ->orderBy('hari')
@@ -210,7 +214,7 @@ class TeacherSessionController extends Controller
                 return [
                     'student' => $presensi->siswa?->nama ?? '-',
                     'status' => $presensi->status,
-                    'time' => optional($presensi->scanned_at)->format('H:i'),
+                    'time' => $this->safeTime($presensi->scanned_at, 'H:i'),
                 ];
             });
 
@@ -229,6 +233,12 @@ class TeacherSessionController extends Controller
         return Jadwal::query()
             ->when($request->user()->isGuru(), function ($query) use ($request) {
                 $query->where('id_guru', $request->user()->id_ref);
+            })
+            ->whereExists(function ($subQuery) {
+                $subQuery->selectRaw('1')
+                    ->from('kelas_subject')
+                    ->whereColumn('kelas_subject.id_mapel', 'jadwal.id_mapel')
+                    ->whereColumn('kelas_subject.id_kelas', 'jadwal.id_kelas');
             });
     }
 
@@ -239,5 +249,69 @@ class TeacherSessionController extends Controller
             $jadwal->getKey(),
             Str::upper(Str::random(8)),
         ]);
+    }
+
+    protected function ensureGeneratedSchedules(Request $request): void
+    {
+        if (! $request->user()->isGuru()) {
+            return;
+        }
+
+        $guruId = (int) $request->user()->id_ref;
+        $defaultDay = Carbon::now()->locale('id')->translatedFormat('l');
+
+        $subjects = Mapel::with('kelas')
+            ->whereHas('kelas')
+            ->get();
+
+        foreach ($subjects as $subject) {
+            [$startTime, $endTime] = $this->extractTimeRange($subject->jam_pelajaran);
+
+            foreach ($subject->kelas as $kelas) {
+                Jadwal::firstOrCreate(
+                    [
+                        'id_mapel' => $subject->id_mapel,
+                        'id_kelas' => $kelas->id_kelas,
+                        'id_guru' => $guruId,
+                    ],
+                    [
+                        'hari' => $defaultDay,
+                        'jam_mulai' => $startTime,
+                        'jam_selesai' => $endTime,
+                    ]
+                );
+            }
+        }
+    }
+
+    protected function extractTimeRange(?string $jamPelajaran): array
+    {
+        if (is_string($jamPelajaran)) {
+            if (preg_match('/(\d{1,2}[:.]\d{2})\s*[-–]\s*(\d{1,2}[:.]\d{2})/', $jamPelajaran, $matches)) {
+                $start = str_replace('.', ':', $matches[1]).':00';
+                $end = str_replace('.', ':', $matches[2]).':00';
+
+                return [$start, $end];
+            }
+        }
+
+        return ['07:00:00', '08:30:00'];
+    }
+
+    protected function safeTime(mixed $value, string $format = 'H:i:s'): ?string
+    {
+        if ($value instanceof CarbonInterface) {
+            return $value->format($format);
+        }
+
+        if (is_string($value) && trim($value) !== '') {
+            try {
+                return Carbon::parse($value)->format($format);
+            } catch (\Throwable) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 }

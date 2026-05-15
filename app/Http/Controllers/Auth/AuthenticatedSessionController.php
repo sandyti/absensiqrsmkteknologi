@@ -42,7 +42,7 @@ class AuthenticatedSessionController extends Controller
         $redirects = [
             'admin' => route('dashboard', absolute: false),
             'guru' => route('dashboard', absolute: false),
-            'siswa' => route('attendance.me', absolute: false),
+            'siswa' => route('dashboard', absolute: false),
         ];
 
         return redirect()->intended($redirects[$user->role] ?? route('dashboard', absolute: false));

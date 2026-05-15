@@ -54,14 +54,12 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Kelas</label>
-                                    <div class="mt-1 max-h-32 overflow-y-auto rounded border border-gray-300 bg-white p-2 space-y-2">
+                                    <select name="id_kelas" class="mt-1 w-full rounded border-gray-300 text-sm" required>
+                                        <option value="">Pilih kelas</option>
                                         @foreach ($classes as $class)
-                                            <label class="flex items-center gap-2 text-sm text-gray-700">
-                                                <input type="checkbox" name="id_kelas[]" value="{{ $class->id_kelas }}" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                                <span>{{ $class->nama }} - {{ $class->tingkat }}</span>
-                                            </label>
+                                            <option value="{{ $class->id_kelas }}">{{ $class->nama }} - {{ $class->tingkat }}</option>
                                         @endforeach
-                                    </div>
+                                    </select>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Jam Pelajaran</label>

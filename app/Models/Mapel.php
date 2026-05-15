@@ -9,7 +9,7 @@ class Mapel extends Model
 {
     use HasFactory;
 
-    protected $table = 'subjects';
+    protected $table = 'mapel';
 
     protected $primaryKey = 'id_mapel';
 
