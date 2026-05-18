@@ -12,6 +12,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -47,6 +48,14 @@ class TeacherSessionController extends Controller
                 ->get()
             : collect();
 
+        if ($activeSession && $selectedJadwal) {
+            $this->applyFullDayLeavesToSession($activeSession, (int) $selectedJadwal->id_kelas, $request);
+        }
+
+        $fullDayLeaveStudentIds = $selectedJadwal
+            ? $this->fullDayLeaveStudentIds((int) $selectedJadwal->id_kelas)
+            : collect();
+
         $showQr = $request->boolean('show_qr');
 
         $scans = $activeSession
@@ -63,7 +72,8 @@ class TeacherSessionController extends Controller
             'selectedJadwal',
             'activeSession',
             'scans',
-            'showQr'
+            'showQr',
+            'fullDayLeaveStudentIds'
         ));
     }
 
@@ -124,6 +134,7 @@ class TeacherSessionController extends Controller
             'jadwal_id' => ['required', 'exists:jadwal,id_jadwal'],
             'id_siswa' => ['required', 'exists:siswa,id_siswa'],
             'status' => ['required', 'in:hadir,izin,sakit,alpa,terlambat'],
+            'izin_scope' => ['nullable', 'in:session,full_day'],
         ]);
 
         $jadwal = $this->accessibleJadwal($request, (int) $data['jadwal_id']);
@@ -143,17 +154,27 @@ class TeacherSessionController extends Controller
             return back()->withErrors(['jadwal_id' => 'Sesi presensi belum dibuka.']);
         }
 
+        $izinScope = $data['status'] === 'izin'
+            ? ($data['izin_scope'] ?? 'session')
+            : null;
+
+        $payload = [
+            'status' => $data['status'],
+            'edited_by' => $request->user()->guruProfile?->id_guru,
+            'scanned_at' => now(),
+            'method' => 'manual',
+        ];
+
+        if ($this->hasIzinScopeColumn()) {
+            $payload['izin_scope'] = $izinScope;
+        }
+
         Presensi::updateOrCreate(
             [
                 'id_sesi' => $session->id_sesi,
                 'id_siswa' => $siswa->id_siswa,
             ],
-            [
-                'status' => $data['status'],
-                'edited_by' => $request->user()->guruProfile?->id_guru,
-                'scanned_at' => now(),
-                'method' => 'manual',
-            ]
+            $payload
         );
 
         return redirect()->route('attendance.session', [
@@ -313,5 +334,62 @@ class TeacherSessionController extends Controller
         }
 
         return null;
+    }
+
+    protected function fullDayLeaveStudentIds(int $kelasId)
+    {
+        if (! $this->hasIzinScopeColumn()) {
+            return collect();
+        }
+
+        return Presensi::query()
+            ->join('sesi_presensi', 'sesi_presensi.id_sesi', '=', 'presensi.id_sesi')
+            ->join('jadwal', 'jadwal.id_jadwal', '=', 'sesi_presensi.id_jadwal')
+            ->where('jadwal.id_kelas', $kelasId)
+            ->whereDate('presensi.scanned_at', Carbon::today())
+            ->where('presensi.status', 'izin')
+            ->where('presensi.izin_scope', 'full_day')
+            ->pluck('presensi.id_siswa')
+            ->unique()
+            ->values();
+    }
+
+    protected function applyFullDayLeavesToSession(SesiPresensi $session, int $kelasId, Request $request): void
+    {
+        $fullDayLeaveStudentIds = $this->fullDayLeaveStudentIds($kelasId);
+
+        if ($fullDayLeaveStudentIds->isEmpty()) {
+            return;
+        }
+
+        $existingStudentIds = Presensi::query()
+            ->where('id_sesi', $session->id_sesi)
+            ->whereIn('id_siswa', $fullDayLeaveStudentIds)
+            ->pluck('id_siswa');
+
+        $missingStudentIds = $fullDayLeaveStudentIds->diff($existingStudentIds);
+
+        if ($missingStudentIds->isEmpty()) {
+            return;
+        }
+
+        $editorId = $request->user()->guruProfile?->id_guru;
+        $timestamp = now();
+
+        foreach ($missingStudentIds as $studentId) {
+            Presensi::create([
+                'id_sesi' => $session->id_sesi,
+                'id_siswa' => $studentId,
+                'status' => 'izin',
+                'edited_by' => $editorId,
+                'scanned_at' => $timestamp,
+                'method' => 'manual',
+            ] + ($this->hasIzinScopeColumn() ? ['izin_scope' => 'full_day'] : []));
+        }
+    }
+
+    protected function hasIzinScopeColumn(): bool
+    {
+        return Schema::hasColumn('presensi', 'izin_scope');
     }
 }

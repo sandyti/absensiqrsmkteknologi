@@ -83,17 +83,26 @@
                             <select name="id_siswa" id="student-select" class="mt-1 w-full rounded border-gray-300 text-sm" required>
                                 <option value="">Pilih siswa</option>
                                 @foreach ($students as $student)
-                                    <option value="{{ $student->id_siswa }}">{{ $student->nama }} - {{ $student->kelas?->nama ?? '-' }}</option>
+                                    <option value="{{ $student->id_siswa }}">
+                                        {{ $student->nama }} - {{ $student->kelas?->nama ?? '-' }}{{ $fullDayLeaveStudentIds->contains($student->id_siswa) ? ' (Izin Penuh)' : '' }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
-                        <select name="status" class="w-full rounded border-gray-300 text-sm" required>
+                        <select name="status" id="manual-status" class="w-full rounded border-gray-300 text-sm" required>
                             <option value="hadir">Hadir</option>
                             <option value="izin">Izin</option>
                             <option value="terlambat">Terlambat</option>
                             <option value="sakit">Sakit</option>
                             <option value="alpa">Alpa</option>
                         </select>
+                        <div id="izin-scope-wrapper" class="hidden">
+                            <label class="block text-sm text-gray-700">Jenis Izin</label>
+                            <select name="izin_scope" id="izin-scope" class="mt-1 w-full rounded border-gray-300 text-sm">
+                                <option value="session">Izin pada jam pelajaran ini saja</option>
+                                <option value="full_day">Izin penuh (seharian)</option>
+                            </select>
+                        </div>
                         <button class="w-full border border-gray-400 rounded-md py-2 text-center font-semibold text-gray-800 hover:bg-gray-50">
                             Simpan Manual
                         </button>
@@ -153,6 +162,23 @@
                     allowClear: true,
                     width: '100%',
                 });
+            }
+
+            const statusSelect = document.getElementById('manual-status');
+            const izinScopeWrapper = document.getElementById('izin-scope-wrapper');
+            const izinScopeSelect = document.getElementById('izin-scope');
+
+            const syncIzinScopeVisibility = () => {
+                if (!statusSelect || !izinScopeWrapper || !izinScopeSelect) return;
+
+                const isIzin = statusSelect.value === 'izin';
+                izinScopeWrapper.classList.toggle('hidden', !isIzin);
+                izinScopeSelect.disabled = !isIzin;
+            };
+
+            if (statusSelect) {
+                syncIzinScopeVisibility();
+                statusSelect.addEventListener('change', syncIzinScopeVisibility);
             }
         });
     </script>

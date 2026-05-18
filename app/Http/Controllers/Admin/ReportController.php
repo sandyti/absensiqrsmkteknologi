@@ -37,6 +37,7 @@ class ReportController extends Controller
         $html = view('admin.reports.pdf', [
             'records' => $data['records'],
             'titleRange' => $data['titleRange'],
+            'statusTotals' => $data['statusTotals'],
             'kopData' => $kopData,
         ])->render();
 
@@ -55,6 +56,7 @@ class ReportController extends Controller
      *     students: Collection<int, Siswa>,
      *     classes: Collection<int, Kelas>,
      *     records: LengthAwarePaginator|Collection<int, Presensi>,
+     *     statusTotals: array<string, int>,
      *     filters: array,
      *     titleRange: string
      * }
@@ -97,6 +99,12 @@ class ReportController extends Controller
             $titleRange = 'Tahun ' . $date->year;
         }
 
+        $statusTotals = (clone $query)
+            ->selectRaw('status, COUNT(*) as total')
+            ->whereIn('status', ['hadir', 'sakit', 'izin', 'terlambat'])
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
         $records = $paginate
             ? $query->orderByDesc('scanned_at')->paginate(20)->withQueryString()
             : $query->orderByDesc('scanned_at')->get();
@@ -104,6 +112,12 @@ class ReportController extends Controller
         return [
             'students' => $students,
             'records' => $records,
+            'statusTotals' => [
+                'hadir' => (int) ($statusTotals->get('hadir') ?? 0),
+                'sakit' => (int) ($statusTotals->get('sakit') ?? 0),
+                'izin' => (int) ($statusTotals->get('izin') ?? 0),
+                'terlambat' => (int) ($statusTotals->get('terlambat') ?? 0),
+            ],
             'filters' => [
                 'student_id' => $filters['student_id'] ?? null,
                 'class_id' => $filters['class_id'] ?? null,

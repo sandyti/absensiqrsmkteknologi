@@ -20,6 +20,7 @@ class Presensi extends Model
         'id_siswa',
         'edited_by',
         'status',
+        'izin_scope',
         'scanned_at',
         'method',
     ];
