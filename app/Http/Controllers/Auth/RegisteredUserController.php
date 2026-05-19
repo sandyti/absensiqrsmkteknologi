@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -43,11 +44,28 @@ class RegisteredUserController extends Controller
         ]);
 
         $user = DB::transaction(function () use ($validated, $request): User {
-            $student = Siswa::create([
-                'nama' => $validated['nama'],
-                'nis' => $validated['nis'],
-                'id_kelas' => $validated['id_kelas'] ?? null,
-            ]);
+            $studentPayload = [];
+            if (Schema::hasColumn('siswa', 'nama')) {
+                $studentPayload['nama'] = $validated['nama'];
+            } elseif (Schema::hasColumn('siswa', 'name')) {
+                $studentPayload['name'] = $validated['nama'];
+            }
+
+            if (Schema::hasColumn('siswa', 'nis')) {
+                $studentPayload['nis'] = $validated['nis'];
+            } elseif (Schema::hasColumn('siswa', 'identifier')) {
+                $studentPayload['identifier'] = $validated['nis'];
+            }
+
+            if (array_key_exists('id_kelas', $validated)) {
+                if (Schema::hasColumn('siswa', 'id_kelas')) {
+                    $studentPayload['id_kelas'] = $validated['id_kelas'];
+                } elseif (Schema::hasColumn('siswa', 'classroom')) {
+                    $studentPayload['classroom'] = null;
+                }
+            }
+
+            $student = Siswa::query()->create($studentPayload);
 
             return User::create([
                 'username' => $validated['username'],

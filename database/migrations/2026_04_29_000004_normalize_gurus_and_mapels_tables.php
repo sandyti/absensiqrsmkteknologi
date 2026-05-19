@@ -9,6 +9,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         if (Schema::hasTable('subject_student')) {
             Schema::dropIfExists('subject_student');
         }
@@ -90,6 +94,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         if (Schema::hasTable('attendance_sessions')) {
             Schema::table('attendance_sessions', function (Blueprint $table): void {
                 try {

@@ -42,12 +42,21 @@
                             <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Per Siswa</label>
-                        <select name="student_id" class="mt-1 w-full rounded border-gray-300 text-sm">
-                            <option value="">Semua</option>
+                        <input
+                            type="text"
+                            id="student_search"
+                            list="student_options"
+                            class="mt-1 w-full rounded border-gray-300 text-sm"
+                            placeholder="Cari nama siswa..."
+                            value="{{ optional($students->firstWhere('id_siswa', $filters['student_id']))?->nama }}"
+                        >
+                        <input type="hidden" name="student_id" id="student_id" value="{{ $filters['student_id'] ?? '' }}">
+                        <datalist id="student_options">
+                            <option value="Semua" data-id=""></option>
                             @foreach ($students as $student)
-                                <option value="{{ $student->id_siswa }}" @selected($filters['student_id'] == $student->id_siswa)>{{ $student->nama }}</option>
+                                <option value="{{ $student->nama }}" data-id="{{ $student->id_siswa }}"></option>
                             @endforeach
-                        </select>
+                        </datalist>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Per Kelas</label>
@@ -64,6 +73,7 @@
                             <option value="hari" @selected($filters['range'] === 'hari')>Per Hari</option>
                             <option value="minggu" @selected($filters['range'] === 'minggu')>Per Minggu</option>
                             <option value="bulan" @selected($filters['range'] === 'bulan')>Per Bulan</option>
+                            <option value="semester" @selected($filters['range'] === 'semester')>Per Semester</option>
                             <option value="tahun" @selected($filters['range'] === 'tahun')>Per Tahun</option>
                         </select>
                     </div>
@@ -90,41 +100,49 @@
                                         <p class="text-sm text-gray-500">Rentang</p>
                                         <p class="text-lg font-semibold text-gray-800">{{ $titleRange }}</p>
                                     </div>
-                                    <p class="text-sm text-gray-500">{{ $records->total() }} data</p>
+                                    <p class="text-sm text-gray-500">{{ $recapRows->count() }} siswa</p>
                                 </div>
-                                <div class="overflow-x-auto">
+                                <div class="overflow-x-auto mb-6">
                                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                                         <thead class="bg-gray-50">
                                             <tr>
-                                                <th class="px-4 py-2 text-left font-semibold text-gray-700">Waktu</th>
-                                                <th class="px-4 py-2 text-left font-semibold text-gray-700">Siswa</th>
-                                                <th class="px-4 py-2 text-left font-semibold text-gray-700">Status</th>
-                                                <th class="px-4 py-2 text-left font-semibold text-gray-700">Metode</th>
-                                                <th class="px-4 py-2 text-left font-semibold text-gray-700">Diubah Oleh</th>
+                                                <th class="px-3 py-2 text-left font-semibold text-gray-700">No</th>
+                                                <th class="px-3 py-2 text-left font-semibold text-gray-700">NIS</th>
+                                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Nama</th>
+                                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Kelas</th>
+                                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Hadir</th>
+                                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Sakit</th>
+                                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Izin</th>
+                                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Alpha</th>
+                                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Terlambat</th>
+                                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Total Pertemuan</th>
+                                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Persentase Kehadiran</th>
+                                                <th class="px-3 py-2 text-left font-semibold text-gray-700">Keterangan</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-gray-200">
-                                            @forelse ($records as $record)
+                                            @forelse ($recapRows as $row)
                                                 <tr>
-                                                    <td class="px-4 py-2">{{ $record->scanned_at?->translatedFormat('d F Y H:i') ?? '-' }}</td>
-                                                    <td class="px-4 py-2">
-                                                        <div class="font-semibold text-gray-800">{{ $record->siswa?->nama ?? '-' }}</div>
-                                                        <div class="text-xs text-gray-500">{{ $record->siswa?->kelas?->nama ?? '-' }}</div>
-                                                    </td>
-                                                    <td class="px-4 py-2 capitalize font-semibold">{{ $record->status }}</td>
-                                                    <td class="px-4 py-2 capitalize text-gray-700">{{ $record->method }}</td>
-                                                    <td class="px-4 py-2 text-gray-700">{{ $record->editor?->nama ?? '-' }}</td>
+                                                    <td class="px-3 py-2">{{ $loop->iteration }}</td>
+                                                    <td class="px-3 py-2">{{ $row['nis'] }}</td>
+                                                    <td class="px-3 py-2">{{ $row['nama'] }}</td>
+                                                    <td class="px-3 py-2">{{ $row['kelas'] }}</td>
+                                                    <td class="px-3 py-2">{{ $row['hadir'] }}</td>
+                                                    <td class="px-3 py-2">{{ $row['sakit'] }}</td>
+                                                    <td class="px-3 py-2">{{ $row['izin'] }}</td>
+                                                    <td class="px-3 py-2">{{ $row['alpa'] }}</td>
+                                                    <td class="px-3 py-2">{{ $row['terlambat'] }}</td>
+                                                    <td class="px-3 py-2">{{ $row['total_pertemuan'] }}</td>
+                                                    <td class="px-3 py-2">{{ number_format($row['persentase_kehadiran'], 2) }}%</td>
+                                                    <td class="px-3 py-2">{{ $row['keterangan'] }}</td>
                                                 </tr>
                                             @empty
                                                 <tr>
-                                                    <td colspan="5" class="px-4 py-4 text-center text-gray-500">Belum ada data presensi.</td>
+                                                    <td colspan="12" class="px-4 py-4 text-center text-gray-500">Belum ada data rekap.</td>
                                                 </tr>
                                             @endforelse
                                         </tbody>
                                     </table>
-                                </div>
-                                <div class="mt-3">
-                                    {{ $records->links() }}
                                 </div>
                             </div>
                         </div>
@@ -133,4 +151,24 @@
             </div>
         </div>
     </div>
+    <script>
+        (function () {
+            const searchInput = document.getElementById('student_search');
+            const studentIdInput = document.getElementById('student_id');
+            const options = Array.from(document.querySelectorAll('#student_options option'));
+
+            if (!searchInput || !studentIdInput || options.length === 0) {
+                return;
+            }
+
+            const syncStudentId = () => {
+                const keyword = (searchInput.value || '').trim().toLowerCase();
+                const match = options.find((option) => option.value.trim().toLowerCase() === keyword);
+                studentIdInput.value = match ? (match.dataset.id || '') : '';
+            };
+
+            searchInput.addEventListener('change', syncStudentId);
+            searchInput.addEventListener('blur', syncStudentId);
+        })();
+    </script>
 </x-app-layout>

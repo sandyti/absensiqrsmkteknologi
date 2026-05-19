@@ -10,14 +10,10 @@
         .subtitle { text-align: center; color: #6b7280; font-size: 11px; margin-bottom: 16px; }
         .meta { margin-bottom: 14px; font-size: 11px; color: #374151; }
         .meta strong { color: #111827; }
-        .summary { margin-bottom: 14px; }
-        .summary td { font-size: 11px; padding: 5px 8px; }
-        .summary .label { font-weight: 700; width: 22%; background: #f9fafb; }
-        .summary .value { width: 28%; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #d1d5db; padding: 6px 8px; }
-        th { background: #f3f4f6; font-size: 11px; text-align: left; }
-        td { font-size: 11px; }
+        th, td { border: 1px solid #d1d5db; padding: 5px 6px; }
+        th { background: #f3f4f6; font-size: 10px; text-align: left; }
+        td { font-size: 10px; }
         .text-center { text-align: center; }
         .small { font-size: 10px; color: #6b7280; }
     </style>
@@ -38,48 +34,42 @@
             <strong>Total data:</strong> {{ $records->count() }}
         </div>
 
-        <table class="summary">
-            <tbody>
-                <tr>
-                    <td class="label">Total Hadir</td>
-                    <td class="value">{{ $statusTotals['hadir'] ?? 0 }}</td>
-                    <td class="label">Total Sakit</td>
-                    <td class="value">{{ $statusTotals['sakit'] ?? 0 }}</td>
-                </tr>
-                <tr>
-                    <td class="label">Total Izin</td>
-                    <td class="value">{{ $statusTotals['izin'] ?? 0 }}</td>
-                    <td class="label">Total Terlambat</td>
-                    <td class="value">{{ $statusTotals['terlambat'] ?? 0 }}</td>
-                </tr>
-            </tbody>
-        </table>
-
         <table>
             <thead>
                 <tr>
-                    <th style="width: 18%;">Waktu</th>
-                    <th style="width: 25%;">Siswa</th>
-                    <th style="width: 12%;">Status</th>
-                    <th style="width: 15%;">Metode</th>
-                    <th style="width: 20%;">Diubah Oleh</th>
+                    <th style="width: 3%;" class="text-center">No</th>
+                    <th style="width: 8%;">NIS</th>
+                    <th style="width: 15%;">Nama</th>
+                    <th style="width: 9%;">Kelas</th>
+                    <th style="width: 5%;" class="text-center">Hadir</th>
+                    <th style="width: 5%;" class="text-center">Sakit</th>
+                    <th style="width: 5%;" class="text-center">Izin</th>
+                    <th style="width: 5%;" class="text-center">Alpha</th>
+                    <th style="width: 6%;" class="text-center">Terlambat</th>
+                    <th style="width: 8%;" class="text-center">Total Pertemuan</th>
+                    <th style="width: 9%;" class="text-center">Persentase Kehadiran</th>
+                    <th style="width: 12%;">Keterangan</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse ($records as $record)
+                @forelse ($recapRows as $row)
                     <tr>
-                        <td>{{ $record->scanned_at?->translatedFormat('d F Y H:i') ?? '-' }}</td>
-                        <td>
-                            <div><strong>{{ $record->siswa?->nama ?? '-' }}</strong></div>
-                            <div class="small">{{ $record->siswa?->kelas?->nama ?? '-' }}</div>
-                        </td>
-                        <td style="text-transform: capitalize;">{{ $record->status }}</td>
-                        <td style="text-transform: capitalize;">{{ $record->method }}</td>
-                        <td>{{ $record->editor?->nama ?? '-' }}</td>
+                        <td class="text-center">{{ $loop->iteration }}</td>
+                        <td>{{ $row['nis'] }}</td>
+                        <td>{{ $row['nama'] }}</td>
+                        <td>{{ $row['kelas'] }}</td>
+                        <td class="text-center">{{ $row['hadir'] }}</td>
+                        <td class="text-center">{{ $row['sakit'] }}</td>
+                        <td class="text-center">{{ $row['izin'] }}</td>
+                        <td class="text-center">{{ $row['alpa'] }}</td>
+                        <td class="text-center">{{ $row['terlambat'] }}</td>
+                        <td class="text-center">{{ $row['total_pertemuan'] }}</td>
+                        <td class="text-center">{{ number_format($row['persentase_kehadiran'], 2) }}%</td>
+                        <td>{{ $row['keterangan'] }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center">Belum ada data presensi.</td>
+                        <td colspan="12" class="text-center">Belum ada data presensi.</td>
                     </tr>
                 @endforelse
             </tbody>

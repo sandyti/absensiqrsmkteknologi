@@ -95,6 +95,10 @@ return new class extends Migration
 
     private function dropForeignByColumnIfExists(string $table, string $column): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         $database = DB::getDatabaseName();
 
         $rows = DB::select(

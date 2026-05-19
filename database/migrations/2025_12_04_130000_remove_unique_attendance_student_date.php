@@ -2,29 +2,31 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        // Pastikan ada index pendukung untuk FK student_id sebelum unique dilepas.
-        try {
-            DB::statement('ALTER TABLE attendances ADD INDEX attendances_student_id_idx (student_id)');
-        } catch (\Throwable $e) {
-            // Index sudah ada, lanjut.
-        }
+        Schema::table('attendances', function (Blueprint $table) {
+            try {
+                $table->index('student_id', 'attendances_student_id_idx');
+            } catch (\Throwable) {
+                // Index sudah ada.
+            }
 
-        // Tambahkan index kombinasional non-unique agar query tetap efisien.
-        try {
-            DB::statement('ALTER TABLE attendances ADD INDEX attendances_student_id_date_idx (student_id, date)');
-        } catch (\Throwable $e) {
-            // Index sudah ada, lanjut.
-        }
+            try {
+                $table->index(['student_id', 'date'], 'attendances_student_id_date_idx');
+            } catch (\Throwable) {
+                // Index sudah ada.
+            }
 
-        // Lepas constraint unique agar multiple scan per hari bisa tersimpan.
-        DB::statement('ALTER TABLE attendances DROP INDEX attendances_student_id_date_unique');
+            try {
+                $table->dropUnique('attendances_student_id_date_unique');
+            } catch (\Throwable) {
+                // Unique sudah tidak ada.
+            }
+        });
     }
 
     public function down(): void

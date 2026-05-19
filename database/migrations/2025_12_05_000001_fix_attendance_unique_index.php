@@ -78,6 +78,18 @@ return new class extends Migration
 
     private function indexExists(string $table, string $index): bool
     {
+        $driver = DB::getDriverName();
+        if ($driver === 'sqlite') {
+            $result = DB::select("PRAGMA index_list('{$table}')");
+            foreach ($result as $row) {
+                if (($row->name ?? null) === $index) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         $result = DB::select("SHOW INDEX FROM {$table} WHERE Key_name = ?", [$index]);
 
         return ! empty($result);
@@ -85,6 +97,10 @@ return new class extends Migration
 
     private function hasForeignKey(string $table, string $fkName): bool
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return false;
+        }
+
         $result = DB::select(
             'SELECT CONSTRAINT_NAME FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = ? AND CONSTRAINT_NAME = ?',
             [$table, $fkName]
