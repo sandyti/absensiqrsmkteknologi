@@ -40,7 +40,7 @@ class ReportController extends Controller
         $kopPath = public_path('images/kop_surat.png');
         $kopData = file_exists($kopPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($kopPath)) : null;
 
-        $template = auth()->user()?->isGuru() ? 'guru.reports.pdf' : 'admin.reports.pdf';
+        $template = auth()->user()?->isGuru() ? 'guru.reports.pdf' : 'admin.reports.pdf'; # ini kdpp om cuma error vscode nya ja di abaikan ja
 
         $html = view($template, [
             'records' => $data['records'],

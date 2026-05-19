@@ -13,8 +13,8 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
-                <div class="flex">
-                    <aside class="w-60 bg-gray-50 border-r border-gray-200">
+                <div class="flex flex-col md:flex-row">
+                    <aside class="hidden md:block md:w-60 bg-gray-50 border-r border-gray-200">
                         <div class="p-4 border-b border-gray-200 text-center">
                             <div class="border rounded-lg p-3 flex justify-center">
                                 <x-application-logo class="h-12 w-auto" />
@@ -37,7 +37,7 @@
                         </nav>
                     </aside>
 
-                    <main class="flex-1 p-6">
+                    <main class="flex-1 p-4 md:p-6">
                         <div class="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
                             <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
